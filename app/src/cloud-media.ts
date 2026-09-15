@@ -12,9 +12,15 @@ export async function mediaPath(userId:string,blob:Blob){
 export async function uploadMedia(client:SupabaseClient,userId:string,blob:Blob){
  const path=await mediaPath(userId,blob);
  const bucket=client.storage.from(MEDIA_BUCKET);
- const {data:exists,error:lookupError}=await bucket.exists(path);
- if(lookupError&&!['400','404'].includes(String((lookupError as unknown as {status?:number}).status)))throw lookupError;
- if(!exists){const {error}=await bucket.upload(path,blob,{upsert:false,contentType:blob.type});if(error){const retry=await bucket.exists(path);if(retry.error||!retry.data)throw error}}
+ // Do not preflight with HEAD: Safari/Storage may hide the missing-file status.
+ const contentType=blob.type.split(';')[0].trim();
+ const {error}=await bucket.upload(path,blob,{upsert:false,contentType});
+ if(error){
+  // A retry can find an immutable object from a prior successful upload.
+  const existing=await bucket.download(path);
+  if(existing.error||!existing.data||await mediaPath(userId,existing.data)!==path)throw error;
+ }
+
  return path;
 }
 export async function downloadMedia(client:SupabaseClient,userId:string,path:string){
@@ -23,3 +29,4 @@ export async function downloadMedia(client:SupabaseClient,userId:string,path:str
  if(error)throw error;
  return data;
 }
+
