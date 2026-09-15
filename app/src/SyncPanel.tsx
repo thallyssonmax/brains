@@ -23,6 +23,8 @@ export function SyncPanel({locale,onSynced}:{locale:Locale;onSynced:()=>Promise<
   step='save';const save=await cloud.rpc('brains_sync_save',{expected:remote.data?.version??0,payload:plan.merged});if(save.error)throw save.error;
   const session=await cloud.auth.getSession();if(session.data.session?.user.id!==user.id)throw Error('auth');
   step='local';await store.commitSynced(merged,plan.merged,snapshot.revision);await onSynced();setMessage(t.done);
- }catch(error){setMessage(String((error as {message?:string})?.message??error).match(/conflict/i)?t.conflict:t.error+' ('+step+')')}finally{setBusy(false)}}
+ }catch(error){setMessage(String((error as {message?:string})?.message??error).match(/conflict/i)?t.conflict:t.error+' ('+step+')'+(step==='media'&&error instanceof Error&&/^media[A-Za-z]+(:[a-zA-Z0-9/:;=.+ -]*)?$/.test(error.message)?' — '+error.message:''))}finally{setBusy(false)}}
  return <section className="panel spaced"><h2>{t.title}</h2><p className="small">{t.help}</p><button className="primary" disabled={busy||!cloud} onClick={()=>void sync()}>{busy?t.busy:t.button}</button><p role="status">{message}</p></section>;
 }
+
+
