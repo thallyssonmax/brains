@@ -1,0 +1,6 @@
+import type {Card,Library,Side} from './model';
+export interface ReviewEvent {id:string;cardId:string;at:string;known:boolean;introduced?:boolean;log?:import('ts-fsrs').ReviewLog}
+export function cardSide(card:Card,back:boolean):Side {const audio=card.front.mode!=='none'?card.front:card.back;return {...(back?card.back:card.front),image:back?(card.back.image||card.front.image):undefined,mode:audio.mode,audio:audio.audio,language:audio.language,audioText:card.front.text,recordedFor:audio.recordedFor}}
+export function sharedCard(card:Card):Card {const audio=cardSide(card,false);return {...card,front:{...card.front,image:undefined,mode:audio.mode,audio:audio.audio,language:audio.language,audioText:'',recordedFor:audio.recordedFor},back:{...card.back,image:card.back.image||card.front.image,mode:'none'}}}
+export function dayKey(date:Date,timezone:string){return new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date)}
+export function dailyProgress(data:Library,now=new Date()){const today=dayKey(now,data.preferences.timezone);const events=(data.reviews??[]).filter(e=>dayKey(new Date(e.at),data.preferences.timezone)===today);return {cards:new Set(events.map(e=>e.cardId)).size,attempts:events.length,correct:events.filter(e=>e.known).length}}

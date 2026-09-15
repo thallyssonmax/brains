@@ -1,0 +1,9 @@
+import 'fake-indexeddb/auto';
+import {it,expect} from 'vitest';
+import {LocalStore} from './storage';
+import {blankCard} from './model';
+import {chooseVoice} from './voice';
+import {cardSide} from './review';
+it('removes trash card, drafts and history atomically, but rejects active cards',async()=>{const store=new LocalStore(crypto.randomUUID());let db=await store.mutate(0,d=>{d.areas=[{id:'a',name:'English',archived:false,deleted:false}];d.decks=[{id:'d',areaId:'a',name:'English',language:'en-US',archived:false,deleted:false}];const c=blankCard(d.decks[0]);d.cards=[c];d.reviews=[{id:'r',cardId:c.id,at:new Date().toISOString(),known:true}]});const id=db.cards[0].id;await store.saveDraft({id:'draft',card:db.cards[0],baseVersion:0,revision:0,savedAt:new Date().toISOString()});await expect(store.purgeCard(id,db.revision)).rejects.toThrow();db=await store.mutate(db.revision,d=>{d.cards[0].deleted=true});await expect(store.purgeCard(id,db.revision-1)).rejects.toThrow();await store.purgeCard(id,db.revision);expect((await store.read()).cards).toHaveLength(0);expect((await store.read()).reviews).toHaveLength(0);expect(await store.drafts()).toHaveLength(0);await store.close()});
+it('uses front text on both sides even if a legacy custom audio text exists',()=>{const c=blankCard({id:'d',areaId:'a',name:'English',language:'en-US',archived:false,deleted:false});c.front.text='Awesome';c.front.audioText='Old override';c.back.text='Incrível';expect(cardSide(c,true).audioText).toBe('Awesome');expect(cardSide(c,false).audioText).toBe('Awesome')});
+it('prefers a matching enhanced voice and never a different language',()=>{const v=[{name:'Basic',lang:'en-US',default:true},{name:'Natural',lang:'en-US',default:false},{name:'Premium',lang:'es-ES',default:false}];expect(chooseVoice(v,'en-US')?.name).toBe('Natural');expect(chooseVoice(v,'pt-BR')).toBeUndefined()});

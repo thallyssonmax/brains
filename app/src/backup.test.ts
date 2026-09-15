@@ -1,0 +1,10 @@
+import 'fake-indexeddb/auto';
+import {it,expect} from 'vitest';
+import {initialLibrary,blankCard} from './model';
+import {exportBackup,importBackup} from './backup';
+import {LocalStore} from './storage';
+import {applyReview,reviewQueue} from './scheduler';
+function fixture(){const library=initialLibrary();library.areas=[{id:'a',name:'English',archived:false,deleted:false}];library.decks=[{id:'d',areaId:'a',name:'English',language:'en',archived:false,deleted:false}];const c=blankCard(library.decks[0]);c.front.text='Hello';c.back.text='Olá';c.back.image=new Blob(['image'],{type:'image/png'});c.front.audio=new Blob(['audio'],{type:'audio/webm'});c.front.mode='recording';library.cards=[c];applyReview(library,{id:'r',cardId:c.id,at:new Date().toISOString(),known:true});return {library,drafts:[]}}
+it('round trips media, dates and review history',async()=>{const original=fixture();const saved=await importBackup(await exportBackup(original));const c=saved.library.cards[0];expect(await c.front.audio!.text()).toBe('audio');expect(await c.back.image!.text()).toBe('image');expect(c.memory!.due).toBeInstanceOf(Date);expect(saved.library.reviews).toHaveLength(1);expect(reviewQueue(saved.library,c.memory!.due)).toHaveLength(1)});
+it('rejects invalid structure, unknown format and broken references',async()=>{await expect(importBackup(new Blob(['{}']))).rejects.toThrow();const source=fixture();source.library.cards[0].deckId='missing';await expect(importBackup(await exportBackup(source))).rejects.toThrow()});
+it('restores atomically, rejects stale writes and recovers the previous library',async()=>{const store=new LocalStore(crypto.randomUUID());const old=await store.mutate(0,d=>{d.preferences.goal=42});await store.restore(fixture(),old.revision);const next=await store.read();expect(next.cards).toHaveLength(1);await expect(store.restore(fixture(),old.revision)).rejects.toThrow('conflict');expect((await store.read()).cards).toHaveLength(1);await store.restore(null,next.revision);expect((await store.read()).preferences.goal).toBe(42);expect((await store.read()).cards).toHaveLength(0);await store.close()});

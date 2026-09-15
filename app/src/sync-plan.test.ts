@@ -1,0 +1,7 @@
+import {it,expect} from 'vitest';
+import {reconcile,assertSyncOwner} from './sync-plan';
+it('keeps independent edits from two devices',()=>{const base=[{id:'a',text:'A'},{id:'b',text:'B'}];const result=reconcile(base,[{id:'a',text:'A2'},base[1]],[base[0],{id:'b',text:'B2'}]);expect(result.merged).toEqual([{id:'a',text:'A2'},{id:'b',text:'B2'}]);expect(result.upload).toEqual([{id:'a',text:'A2'}]);expect(result.conflicts).toEqual([])});
+it('preserves both sides of conflicting changes instead of picking the latest time',()=>{const result=reconcile([{id:'a',text:'A'}],[{id:'a',text:'local'}],[{id:'a',text:'remote'}]);expect(result.conflicts[0].local?.text).toBe('local');expect(result.conflicts[0].remote?.text).toBe('remote');expect(result.upload).toEqual([])});
+it('propagates tombstones and treats deletion versus edit as a conflict',()=>{const base=[{id:'a',deleted:false,text:'A'}];expect(reconcile(base,[{...base[0],deleted:true}],base).upload[0].deleted).toBe(true);expect(reconcile(base,[{...base[0],deleted:true}],[{...base[0],text:'B'}]).conflicts).toHaveLength(1)});
+it('deduplicates equal changes independently of property order',()=>{expect(reconcile([],[{id:'a',text:'A'}],[{text:'A',id:'a'}]).upload).toHaveLength(0)});
+it('rejects duplicate identifiers and a different or unbound account',()=>{expect(()=>reconcile([],[{id:'a'},{id:'a'}],[])).toThrow();expect(()=>assertSyncOwner(undefined,'a')).toThrow();expect(()=>assertSyncOwner('a','b')).toThrow();expect(()=>assertSyncOwner('a','a')).not.toThrow()});

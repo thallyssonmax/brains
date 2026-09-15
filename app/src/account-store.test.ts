@@ -1,0 +1,5 @@
+import 'fake-indexeddb/auto';
+import {it,expect} from 'vitest';
+import {LocalStore,accountDatabaseName} from './storage';
+it('separates accounts and restores the same account library on return',async()=>{const id=crypto.randomUUID();const a=new LocalStore(accountDatabaseName(id+'a')),b=new LocalStore(accountDatabaseName(id+'b'));await a.mutate(0,d=>{d.areas.push({id:'private',name:'Only A',archived:false,deleted:false})});expect((await b.read()).areas).toHaveLength(0);await b.mutate(0,d=>{d.preferences.locale='es'});expect((await a.read()).preferences.locale).not.toBe('es');await a.close();const returned=new LocalStore(accountDatabaseName(id+'a'));expect((await returned.read()).areas[0].name).toBe('Only A');expect(await b.drafts()).toEqual([]);await returned.close();await b.close()});
+it('requires an account and never opens the old shared database',()=>{expect(()=>accountDatabaseName('')).toThrow('accountRequired');expect(accountDatabaseName('a')).not.toBe('personal-anki-library-v1');expect(accountDatabaseName('a/b')).not.toBe(accountDatabaseName('a%2Fb'))});
