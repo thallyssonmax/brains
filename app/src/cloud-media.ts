@@ -5,8 +5,12 @@ export function checkMediaPath(userId:string,path:string){
 }
 export async function mediaPath(userId:string,blob:Blob){
  if(!/^[a-f0-9-]{36}$/i.test(userId))throw Error('mediaOwnerMismatch');
- if(!blob.size||blob.size>5*1024*1024||! /^(image\/(jpeg|png|webp|gif)|audio\/[\w.+-]+)(;.*)?$/.test(blob.type))throw Error('invalidMedia');
- const hash=await crypto.subtle.digest('SHA-256',await blob.arrayBuffer());
+ if(!blob.size)throw Error('mediaEmpty');
+ if(blob.size>5*1024*1024)throw Error('mediaTooLarge');
+ if(! /^(image\/(jpeg|png|webp|gif)|audio\/[\w.+-]+)(;.*)?$/.test(blob.type))throw Error('mediaFormat:'+blob.type.slice(0,80));
+ let bytes:ArrayBuffer;try{bytes=await blob.arrayBuffer()}catch{throw Error('mediaReadFailed')}
+ if(!globalThis.crypto?.subtle)throw Error('mediaCryptoUnavailable');
+ const hash=await crypto.subtle.digest('SHA-256',bytes);
  return userId+'/'+Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
 }
 export async function uploadMedia(client:SupabaseClient,userId:string,blob:Blob){
@@ -18,7 +22,7 @@ export async function uploadMedia(client:SupabaseClient,userId:string,blob:Blob)
  if(error){
   // A retry can find an immutable object from a prior successful upload.
   const existing=await bucket.download(path);
-  if(existing.error||!existing.data||await mediaPath(userId,existing.data)!==path)throw error;
+  if(existing.error||!existing.data||await mediaPath(userId,existing.data)!==path){const e=error as unknown as {status?:number;statusCode?:string;error?:string};throw Error('mediaUpload:'+String(e.status??e.statusCode??'network').replace(/[^a-z0-9]/gi,'')+':'+blob.type.split(';')[0])}
  }
 
  return path;
