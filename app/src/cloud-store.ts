@@ -10,27 +10,43 @@ export interface CloudTransport {
  save(version:number,id:string,document:Library):Promise<CloudRow>;
  upload(path:string,blob:Blob):Promise<void>;
  download(path:string):Promise<Blob>;
+ cleanup():Promise<number>;
 }
 export interface UploadTask {id:string;committed?:boolean;createdAt?:number;cardId:string;side:'front'|'back';kind:'image'|'audio';path:string;blob:Blob}
 export function transportFor(client:SupabaseClient,userId:string):CloudTransport{
  const auth=async()=>{const {data,error}=await client.auth.getSession();if(error||data.session?.user.id!==userId)throw Error('authenticationRequired')};
  return {
   async read(){await auth();const {data,error}=await client.from('brains_cloud').select('version,document').eq('user_id',userId).maybeSingle();if(error)throw Error('cloudUnavailable');return data as CloudRow|null},
-  async save(version,id,document){await auth();const args={expected_version:version,operation_id:id,payload:document};let result=await client.rpc('brains_cloud_save',args);if(result.error&&!result.error.message.includes('conflict')){await auth();result=await client.rpc('brains_cloud_save',args)}if(result.error)throw Error(result.error.message.includes('conflict')?'conflict':'cloudUnavailable');return result.data as CloudRow},
+  async save(version,id,document){await auth();const args={expected_version:version,operation_id:id,payload:document};let result=await client.rpc('brains_cloud_save',args);if(result.error&&!result.error.message.includes('conflict')){await auth();result=await client.rpc('brains_cloud_save',args)}if(result.error)throw Error(result.error.message.includes('conflict')?'conflict':result.error.message.includes('mediaRetired')?'mediaRetired':'cloudUnavailable');return result.data as CloudRow},
   async upload(path,blob){await auth();checkMediaPath(userId,path);const mime=blob.type.split(';')[0].trim();const bytes=await blob.arrayBuffer();const bucket=client.storage.from(MEDIA_BUCKET);const {error}=await bucket.upload(path,bytes,{upsert:false,contentType:mime});if(error){const old=await bucket.download(path);if(old.error||!old.data)throw Error('mediaUploadFailed');const found=new Uint8Array(await old.data.arrayBuffer()),expected=new Uint8Array(bytes);if(found.length!==expected.length||found.some((b,i)=>b!==expected[i]))throw Error('mediaUploadFailed')}},
-  async download(path){await auth();checkMediaPath(userId,path);const {data,error}=await client.storage.from(MEDIA_BUCKET).download(path);if(error)throw Error('mediaUploadFailed');return data}
+  async download(path){await auth();checkMediaPath(userId,path);const {data,error}=await client.storage.from(MEDIA_BUCKET).download(path);if(error)throw Error('mediaUploadFailed');return data},
+  async cleanup(){
+   await auth();const claimed=await client.rpc('brains_claim_media_gc');if(claimed.error)throw Error('mediaCleanupPending');
+   const paths=(claimed.data??[]) as {path:string}[];let failed=false;
+   for(const {path} of paths){
+    await auth();checkMediaPath(userId,path);
+    const removed=await client.storage.from(MEDIA_BUCKET).remove([path]);
+    if(removed.error){failed=true;continue}
+    const finished=await client.rpc('brains_finish_media_gc',{target_path:path});if(finished.error)failed=true;
+   }
+   if(failed)throw Error('mediaCleanupPending');return paths.length;
+  }
  };
 }
 
 export class CloudStore extends LocalStore {
  private listeners=new Set<()=>void>();
  private processing?:Promise<void>;
+ private cleaning?:Promise<void>;
+ cleanupFailed=false;
  private active=true;
  private snapshots=new Map<number,string>();
+ private availableDecks?:Set<string>;
+ private newestRevision=-1;
  private writing=0;
  private readonly downloads=new Map<string,Promise<Blob>>();
  private comparable(db:Library){const copy=structuredClone(db);copy.revision=0;for(const c of copy.cards)for(const side of [c.front,c.back]){delete side.imagePending;delete side.audioPending}return JSON.stringify(copy)}
- private remember(db:Library){this.snapshots.set(db.revision,this.comparable(db));if(this.snapshots.size>50)this.snapshots.delete(this.snapshots.keys().next().value!);return db}
+ private remember(db:Library){if(db.revision>=this.newestRevision){this.newestRevision=db.revision;this.availableDecks=new Set(db.decks.map(d=>d.id))}this.snapshots.set(db.revision,this.comparable(db));if(this.snapshots.size>50)this.snapshots.delete(this.snapshots.keys().next().value!);return db}
  pendingCount=0;
  mediaFailed=false;
  constructor(readonly userId:string,private remote:CloudTransport,name='brains-drafts-v3-'+userId){super(name)}
@@ -42,6 +58,12 @@ export class CloudStore extends LocalStore {
   const db=(await importBackup(new Blob([JSON.stringify({format:'brains-backup',version:1,data:{library:{...row.document,revision:row.version},drafts:[]}})]))).library;
   for(const card of db.cards)for(const side of [card.front,card.back])for(const key of ['imagePath','audioPath'] as const)if(side[key])checkMediaPath(this.userId,side[key]!);
   return this.remember(db);
+ }
+ override async drafts(){
+  const drafts=await super.drafts();if(!this.availableDecks)return drafts;
+  const valid:Draft[]=[];
+  for(const draft of drafts){if(this.availableDecks.has(draft.card.deckId))valid.push(draft);else await this.removeDraft(draft.id,draft.revision).catch(()=>{})}
+  return valid;
  }
  override async read(){const row=await this.remote.read();return row?this.decode(row):this.remember(initialLibrary())}
  private async commit(db:Library,expected:number){
@@ -58,7 +80,7 @@ export class CloudStore extends LocalStore {
    if(db.revision!==expected&&(!baseline||this.comparable(db)!==baseline))throw Error('conflict');
    const revision=db.revision;change(db);
    try{return await this.commit(db,revision)}catch(e){if(!(e instanceof Error&&e.message==='conflict')||attempt===2)throw e}
-  }throw Error('conflict')}finally{this.writing--}
+  }throw Error('conflict')}finally{this.writing--;void this.cleanupMedia()}
  }
  override async saveCard(card:Card,baseVersion:number,draft:Draft){
   this.writing++;try{return await this.saveCardNow(card,baseVersion,draft)}finally{this.writing--;void this.retryMedia().catch(()=>{})}
@@ -81,6 +103,24 @@ export class CloudStore extends LocalStore {
   return result;
  }
  override async purgeCard(id:string,revision:number){await this.mutate(revision,db=>{if(!db.cards.some(c=>c.id===id&&c.deleted))throw Error('conflict');db.cards=db.cards.filter(c=>c.id!==id);db.reviews=db.reviews?.filter(r=>r.cardId!==id)});for(const draft of await this.drafts())if(draft.card.id===id)await this.removeDraft(draft.id,draft.revision);for(const task of await this.uploads())if(task.cardId===id)await this.removeUpload(task.id)}
+ async purgeArea(id:string,revision:number){
+  const removedDecks=new Set<string>();
+  await this.mutate(revision,db=>{
+   if(!db.areas.some(a=>a.id===id&&a.deleted))throw Error('conflict');
+   for(const deck of db.decks)if(deck.areaId===id)removedDecks.add(deck.id);
+   const removedCards=new Set(db.cards.filter(c=>removedDecks.has(c.deckId)).map(c=>c.id));
+   db.areas=db.areas.filter(a=>a.id!==id);db.decks=db.decks.filter(d=>!removedDecks.has(d.id));
+   db.cards=db.cards.filter(c=>!removedCards.has(c.id));db.reviews=db.reviews?.filter(r=>!removedCards.has(r.cardId));
+  });
+  for(const draft of await this.drafts())if(removedDecks.has(draft.card.deckId))await this.removeDraft(draft.id,draft.revision);
+  const remaining=new Set((await this.read()).cards.map(c=>c.id));
+  for(const task of await this.uploads())if(!remaining.has(task.cardId)&&task.committed)await this.removeUpload(task.id);
+ }
+ async cleanupMedia(){
+  if(!this.active||this.writing)return;if(this.cleaning)return this.cleaning;
+  this.cleaning=(async()=>{try{await this.remote.cleanup();this.cleanupFailed=false}catch{this.cleanupFailed=true}finally{this.notify()}})().finally(()=>{this.cleaning=undefined});
+  return this.cleaning;
+ }
  async retryMedia(){if(this.writing)return;if(this.processing)return this.processing;this.processing=this.processMedia().finally(()=>{this.processing=undefined});return this.processing}
  private async processMedia(){
   this.mediaFailed=false;
@@ -94,7 +134,7 @@ export class CloudStore extends LocalStore {
    }
    if(this.active)await this.removeUpload(task.id);
   }catch{this.mediaFailed=true}}
-  this.pendingCount=(await this.uploads()).length;this.notify();
+  this.pendingCount=(await this.uploads()).length;this.notify();await this.cleanupMedia();
  }
  async download(path:string){
   checkMediaPath(this.userId,path);if(!this.active)throw Error('authenticationRequired');

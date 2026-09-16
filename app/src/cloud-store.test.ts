@@ -7,14 +7,16 @@ import {exportBackup,importBackup} from './backup';
 
 function server(){
  let row:CloudRow|null=null;let unavailable=false,mediaFailure=false;
- const files=new Map<string,Blob>();
+ const files=new Map<string,Blob>(),garbage=new Set<string>();let cleanupFailure=false;
+ const paths=(data:CloudRow|null)=>new Set((data?.document.cards??[]).flatMap(c=>[c.front.imagePath,c.front.audioPath,c.back.imagePath,c.back.audioPath].filter((p):p is string=>!!p)));
  const remote:CloudTransport={
   async read(){if(unavailable)throw Error('cloudUnavailable');return structuredClone(row)},
-  async save(version,_id,document){if(unavailable)throw Error('cloudUnavailable');if(version!==(row?.version??0))throw Error('conflict');row={version:version+1,document:structuredClone(document)};return structuredClone(row)},
+  async save(version,_id,document){if(unavailable)throw Error('cloudUnavailable');if(version!==(row?.version??0))throw Error('conflict');const before=paths(row);row={version:version+1,document:structuredClone(document)};for(const path of before)if(!paths(row).has(path))garbage.add(path);return structuredClone(row)},
   async upload(path,blob){if(mediaFailure)throw Error('mediaUploadFailed');files.set(path,blob)},
-  async download(path){const blob=files.get(path);if(!blob)throw Error('mediaUploadFailed');return blob}
+  async download(path){const blob=files.get(path);if(!blob)throw Error('mediaUploadFailed');return blob},
+  async cleanup(){if(cleanupFailure)throw Error('mediaCleanupPending');let count=0;for(const path of garbage)if(!paths(row).has(path)){files.delete(path);garbage.delete(path);count++}return count}
  };
- return {remote,files,offline:(value:boolean)=>{unavailable=value},failMedia:(value:boolean)=>{mediaFailure=value}};
+ return {remote,files,failCleanup:(value:boolean)=>{cleanupFailure=value},offline:(value:boolean)=>{unavailable=value},failMedia:(value:boolean)=>{mediaFailure=value}};
 }
 async function setup(){
  const backend=server(),user=crypto.randomUUID();
@@ -84,4 +86,64 @@ describe('authoritative cloud library',()=>{
   await expect(store.saveCard(card,0,await draft())).rejects.toThrow('mediaOwnerMismatch');store.deactivate();
   await expect(store.mutate(1,d=>{d.preferences.goal=9})).rejects.toThrow('authenticationRequired');
  });
+});
+
+
+describe('permanent area deletion and media cleanup',()=>{
+ it('requires the area to be in trash and refuses a stale version',async()=>{
+  const {store,other,data}=await setup();await expect(store.purgeArea('a',data.revision)).rejects.toThrow('conflict');
+  await other.mutate(data.revision,d=>{d.areas[0].deleted=true});
+  await expect(store.purgeArea('a',data.revision)).rejects.toThrow('conflict');expect((await store.read()).areas).toHaveLength(1);
+ });
+ it('atomically removes all area cards and reviews, keeping other areas and their history',async()=>{
+  const {store,card,draft}=await setup();await store.saveCard(card,0,await draft());let db=await store.read();
+  db=await store.mutate(db.revision,d=>{
+   d.cards.push({...structuredClone(d.cards[0]),id:'archived',archived:true},{...structuredClone(d.cards[0]),id:'trashed',deleted:true});
+   d.areas.push({id:'other',name:'Other',deleted:false,archived:false});d.decks.push({...d.decks[0],id:'other-deck',areaId:'other'});
+   d.cards.push({...structuredClone(d.cards[0]),id:'keep',deckId:'other-deck'});
+   d.reviews=d.cards.map(c=>({id:'review-'+c.id,cardId:c.id,at:new Date().toISOString(),known:true}));d.areas[0].deleted=true;
+  });
+  const unsaved=blankCard(db.decks[0]);await draft(unsaved);
+  await store.purgeArea('a',db.revision);const result=await store.read();
+  expect(result.areas.map(a=>a.id)).toEqual(['other']);expect(result.decks.map(d=>d.id)).toEqual(['other-deck']);
+  expect(result.cards.map(c=>c.id)).toEqual(['keep']);expect(result.reviews?.map(r=>r.cardId)).toEqual(['keep']);expect(await store.drafts()).toHaveLength(0);
+ });
+ it('preserves media in trash and removes it only after permanent area deletion',async()=>{
+  const {store,backend,card,draft}=await setup();card.back.image=new Blob(['photo'],{type:'image/png'});
+  await store.saveCard(card,0,await draft());await store.retryMedia();let db=await store.read();
+  db=await store.mutate(db.revision,d=>{d.areas[0].deleted=true});await store.cleanupMedia();expect(backend.files.size).toBe(1);
+  await store.purgeArea('a',db.revision);await store.cleanupMedia();expect(backend.files.size).toBe(0);
+ });
+ it('retains cleanup work after a network error without undoing the deletion',async()=>{
+  const {store,backend,card,draft}=await setup();card.back.image=new Blob(['photo'],{type:'image/png'});
+  await store.saveCard(card,0,await draft());await store.retryMedia();let db=await store.read();backend.failCleanup(true);
+  db=await store.mutate(db.revision,d=>{d.areas[0].deleted=true});await store.purgeArea('a',db.revision);await store.cleanupMedia();
+  expect((await store.read()).areas).toHaveLength(0);expect(store.cleanupFailed).toBe(true);expect(backend.files.size).toBe(1);
+  backend.failCleanup(false);await store.cleanupMedia();expect(backend.files.size).toBe(0);expect(store.cleanupFailed).toBe(false);
+ });
+ it('preserves a file referenced by a surviving card, even if the original area is purged',async()=>{
+  const {store,backend,card,draft}=await setup();card.back.image=new Blob(['shared'],{type:'image/png'});
+  await store.saveCard(card,0,await draft());await store.retryMedia();let db=await store.read();
+  db=await store.mutate(db.revision,d=>{
+   d.areas.push({id:'other',name:'Other',deleted:false,archived:false});d.decks.push({...d.decks[0],id:'other-deck',areaId:'other'});
+   d.cards.push({...structuredClone(d.cards[0]),id:'shared',deckId:'other-deck'});d.areas[0].deleted=true;
+  });
+  await store.purgeArea('a',db.revision);await store.cleanupMedia();expect(backend.files.size).toBe(1);expect((await store.read()).cards[0].id).toBe('shared');
+ });
+});
+
+it('drops stale local drafts on another device after the parent area is permanently removed',async()=>{
+ const {store,other,card}=await setup();await other.read();
+ await other.saveDraft({id:'other-draft',card,revision:0,baseVersion:0,savedAt:''});
+ const db=await store.read();const trashed=await store.mutate(db.revision,d=>{d.areas[0].deleted=true});
+ await store.purgeArea('a',trashed.revision);await other.read();expect(await other.drafts()).toHaveLength(0);
+});
+
+it('does not discard a new-area draft when an older read arrives late',async()=>{
+ const backend=server();const store=new CloudStore(crypto.randomUUID(),backend.remote,crypto.randomUUID());
+ const realRead=backend.remote.read;let release:(value:CloudRow|null)=>void=()=>{};
+ backend.remote.read=()=>new Promise(resolve=>{release=resolve});const staleRead=store.read();backend.remote.read=realRead;
+ const db=await store.mutate(0,d=>{d.areas.push({id:'new',name:'New',archived:false,deleted:false});d.decks.push({id:'new',areaId:'new',name:'New',language:'en-US',archived:false,deleted:false})});
+ await store.saveDraft({id:'keep',card:blankCard(db.decks[0]),revision:0,baseVersion:0,savedAt:''});release(null);await staleRead;
+ expect(await store.drafts()).toHaveLength(1);
 });
