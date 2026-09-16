@@ -1,0 +1,130 @@
+PRD — BRAINS
+Versão 2.0 | Atualizado em 16/09/2026
+Estado: aplicativo web publicado em https://brains-puce.vercel.app/
+Referência de implementação: commit 7d9dbfc8aa119a299b291052d54a4fab29c5f860.
+Este documento substitui as propostas anteriores. Diferencia comportamento entregue de evolução futura.
+
+1. OBJETIVO
+Ajudar o usuário a aprender palavras, frases e conceitos por recuperação ativa e revisões espaçadas. Uso pessoal, mobile first, com iPhone, Android e desktop como plataformas web. Interface em português do Brasil, inglês e espanhol. Não há garantia de memorização nem equivalência biológica com um cérebro.
+
+2. ORGANIZAÇÃO E CONTA
+Área → Cards. A área é o baralho apresentado ao usuário. Não existe criação de baralhos dentro de áreas; a estrutura técnica ainda mantém decks internos.
+Login por e-mail e senha; conta pessoal previamente criada. Sessão válida abre a biblioteca da conta. Configurações contém Sair da conta. Não há cadastro público pela interface.
+Conteúdo, preferências, histórico e agendamentos são lidos e salvos automaticamente no Supabase por usuário. Não há botão de sincronização manual.
+
+3. CADASTRO
+Criar um card a partir de uma área atribui essa área automaticamente. O editor não oferece seletor de área.
+Dois painéis:
+- Frente: Pergunta obrigatória e áudio opcional.
+- Verso: Resposta obrigatória e imagem opcional.
+Textos com até 2.000 caracteres. Exemplos podem integrar o texto; não existe campo separado de exemplo.
+Áudio somente na frente, também na prévia e na revisão. Opções: voz de referência (padrão), minha gravação, importar áudio, sem áudio.
+Referência lê a frente no idioma da área, independentemente do idioma da interface. Não há Texto para ouvir nem seletor de pronúncia por card. Usa síntese nativa do dispositivo, sem gerar arquivo na nuvem. Disponibilidade e qualidade variam conforme as vozes instaladas.
+Gravação de até 30 segundos; ouvir, parar, regravar e remover. Avaliação automática de pronúncia não implementada. Alterar o texto após gravar/importar exige conferir a correspondência ou manter o áudio explicitamente.
+Imagem única no verso: Tirar foto ou Escolher foto. JPG, PNG, WebP ou GIF; até 5 MB. Áudios também têm limite de 5 MB e dependem de formato reproduzível pelo navegador.
+Permissões são solicitadas ao usar câmera/microfone. Falhas preservam os campos.
+Prévia permite alternar frente e verso. Pergunta duplicada na mesma área gera confirmação, sem proibir outro significado.
+
+4. RASCUNHOS E SALVAMENTO
+Novos rascunhos são persistidos localmente após alterações, não apenas por abrir o editor. Rascunhos anteriores continuam disponíveis no aparelho da mesma conta.
+Salvar card só é confirmado após resposta do banco. Anexos têm fila independente: um card pode estar salvo enquanto seu arquivo ainda está pendente no aparelho de origem.
+É necessária conexão para salvar conteúdo definitivo e confirmar revisões. Não há fluxo completo offline nem promessa de sincronização de revisões offline.
+Sair da edição permite guardar rascunho ou descartá-lo. Limpar os dados do navegador pode apagar rascunhos e anexos ainda não enviados.
+
+5. REVISÃO ESPAÇADA — REGRA IMPLEMENTADA
+Biblioteca ts-fsrs 5.4.2.
+Configuração: request_retention=0.9; enable_fuzz=false; enable_short_term=true.
+Os demais parâmetros e passos são os padrões da versão fixada da biblioteca. Não há otimização personalizada de parâmetros por usuário.
+90% é um parâmetro do agendamento, não garantia de retenção.
+
+Fluxo:
+1. Abrir a área e tocar em Revisar.
+2. Ver a frente, tentar lembrar e escolher Sei ou Não sei.
+3. Conferir o verso; a avaliação ainda pode ser alterada.
+4. Tocar em Próximo card para confirmar.
+5. Salvar evento e novo estado FSRS na mesma alteração versionada da biblioteca.
+Virar o card não salva a revisão. Sair antes de Próximo card não registra a tentativa.
+Sei → Rating.Good. Não sei → Rating.Again. Difícil/Fácil não são oferecidos.
+O FSRS calcula a próxima data conforme estado anterior, resposta e instante da revisão. Aprendizagem/reaprendizagem podem retornar no mesmo dia.
+NÃO existe regra fixa de 10 minutos nem sequência universal de dias. Essa proposta antiga foi substituída pelos resultados da biblioteca.
+Eventos repetidos com o mesmo identificador não duplicam o histórico. Revisões antecipadas ou de cards que deixaram de ser elegíveis são rejeitadas.
+O algoritmo roda no cliente; banco mantém o resultado e o histórico. Não existe tarefa agendada do servidor para liberar cada card.
+
+Fila:
+- Apenas cards, áreas e decks técnicos ativos, sem arquivamento ou lixeira.
+- Respeita a área escolhida.
+- Primeiro todos os cards com agendamento vencido (due <= agora), ordenados pela data mais antiga. Não há prioridade separada por estado de aprendizagem.
+- Depois cards sem estado FSRS, ordenados por criação e identificador, respeitando o saldo global de novos do dia.
+- Não antecipa cards futuros para completar a meta.
+A sessão é uma lista selecionada ao iniciar. Cards que vencem depois precisam de uma nova entrada na revisão; não são reinseridos automaticamente na sessão já aberta.
+Revisões confirmadas persistem. O índice de uma sessão interrompida não é persistido; uma nova sessão recalcula a fila.
+
+6. META E TEMPO
+Padrão de conta nova: meta 20 cards distintos/dia; limite 5 novos/dia. Preferências existentes não são sobrescritas.
+Meta permitida: 1 a 999. Limite de novos: 0 a 999.
+Meta e limite abrangem todas as áreas. Meta não bloqueia revisões vencidas e não altera datas.
+Um card conta uma vez por dia; repetições aumentam tentativas. Novos contam também na meta.
+Primeira revisão introduz o card; o total de introduzidos é calculado pelo histórico do dia.
+Dia definido pelo fuso da conta. Alterar fuso reagrupa estatísticas sem mudar os instantes salvos.
+Excluir definitivamente cards remove seu histórico e pode reduzir contagens do dia e de introduzidos.
+Datas exibidas sem segundos, no fuso salvo; precisão original preservada no agendamento.
+Home/área mostram Em dia e próxima revisão quando não há fila; também indicam ausência de cards ou novos disponíveis amanhã conforme o caso.
+O relógio da interface é atualizado a cada 30 segundos; listagens consultam a nuvem a cada 15 segundos e ao retornar à aba/conexão. Editor e sessão não são substituídos por atualização de fundo.
+
+7. CICLO DE VIDA
+Áreas e cards podem ser renomeados/editados, arquivados, movidos à lixeira e restaurados.
+Arquivar/lixeira retira conteúdo da revisão e preserva seus anexos.
+Exclusão definitiva exige estar na lixeira e confirmação.
+Excluir área remove seus decks técnicos, todos os cards (incluindo arquivados/lixeira), revisões vinculadas e rascunhos locais associados. Outros aparelhos removem rascunhos órfãos na próxima leitura.
+Mídias sem referência entram em fila remota de limpeza; arquivos ainda usados por qualquer card são preservados.
+Limpeza física pela API do Storage com verificação de proprietário e referências. Falhas permitem retentativa. Processamento requer app aberto e online; não há cron de limpeza.
+Uploads abandonados sem referência só são elegíveis após 24 horas.
+Backups já baixados não são alterados pela exclusão.
+
+8. ARQUITETURA
+React, TypeScript e Vite. PostgreSQL/Supabase mantém uma biblioteca JSONB por conta em brains_cloud; não são tabelas normalizadas por entidade no fluxo atual.
+RPC versionada e operation_id idempotente evitam sobrescrita silenciosa. Conflitos exigem recarregar e tentar novamente; não há mesclagem automática de edições ou revisões concorrentes.
+Arquivos no bucket privado brains-media, isolados por usuário. Índices/referências no documento; binários fora dele.
+IndexedDB: rascunhos e fila local de mídia. Não é fonte principal da biblioteca.
+Falha ao ler a nuvem não deve aparecer como biblioteca vazia. Falha de mídia não impede consultar o texto.
+Logout encerra sessão local e preserva rascunhos/pendências isolados por conta. Não significa criptografia local.
+Repositório público thallyssonmax/brains; Vercel com deploy automático da branch main, Root Directory app.
+Nenhuma chave administrativa deve ir para frontend ou repositório.
+
+9. UX, ACESSIBILIDADE E TEXTOS
+Priorizar uma interface intuitiva antes de adicionar comunicação.
+Estados comuns (próxima revisão, meta, fila vazia) aparecem junto do contexto, sem banners permanentes.
+Info: andamento relevante, como anexos pendentes.
+Warning: situação recuperável que exige atenção, como arquivo pendente após falha ou gravação que não corresponde ao texto.
+Erro: ação falhou, com recuperação clara; nunca confirmar sucesso falso.
+Sucesso: confirmação breve já existente.
+Não exibir mensagens de desenvolvimento, armazenamento ou sincronização em condições normais.
+Navegação expõe estado atual e filtros expõem seleção. Diálogos restauram foco ao disparador e fechamento tem alvo de 44 px.
+Ações empilham em telas muito estreitas; respeitar movimento reduzido; manter rótulos e foco visível.
+Textos sucintos nos três idiomas. Fuso escolhido em lista cidade/região, armazenado como identificador IANA.
+Acessibilidade integral ainda não certificada. VoiceOver, teclado virtual iOS e zoom real precisam de validação adicional.
+
+10. ESCOPO FUTURO / NÃO ENTREGUE
+- Aplicativos nativos/Capacitor e publicação em lojas.
+- PWA completa com manifesto/service worker e uso offline.
+- Avaliação automática de pronúncia.
+- Descrição opcional de imagens.
+- Importação Anki, notificações push, colaboração, gamificação e ajuste individual de parâmetros FSRS.
+- Painel analítico avançado, reinício explícito de aprendizado e retomada exata da sessão.
+Backup/restauração têm código legado e testes, mas seção removida da interface por decisão do usuário; não são prioridade atual. Armazenamento na nuvem não equivale a uma política de backup.
+
+11. VALIDAÇÃO E ACEITE
+Confirmados pelo usuário no iPhone e navegador: câmera/microfone, persistência entre aparelhos, exclusão definitiva de área e mesmo próximo agendamento após revisão.
+Implementação atual: 59 testes em 15 arquivos, TypeScript e build aprovados na última entrega funcional.
+Aceite contínuo: confirmação única em Próximo card; vencidos antes dos novos; limite global; contagem distinta; frente com áudio/verso com imagem; nuvem por conta; exclusão protegida e limpeza sem apagar arquivos compartilhados.
+Alterações futuras precisam preservar rascunhos, mídias, histórico e isolamento.
+Meta financeira: operar dentro das cotas gratuitas; não prometer gratuidade ilimitada nem contratar planos automaticamente.
+
+12. DOCUMENTAÇÃO
+app/README.md: entrada técnica.
+app/REVISAO-ESPACADA.md: contrato do agendamento.
+app/CLOUD-FIRST.md e app/MEDIA-CLEANUP.md: arquitetura e limpeza.
+app/UX-DECISIONS.md: decisões de interface.
+app/DEPLOY.md: publicação.
+Plano de entrega - Personal Anki.txt: status e pendências.
+docs/historico/: documentos anteriores, sem validade como especificação atual.

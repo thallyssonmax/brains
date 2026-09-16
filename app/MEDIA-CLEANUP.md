@@ -1,6 +1,6 @@
 # Limpeza de mídias e exclusão definitiva de áreas
 
-Estado: implementação validada; banco preparado. Publicação autorizada em 16/09/2026.
+Estado: publicado em 16/09/2026. Usuário confirmou exclusão permanente no navegador e iPhone.
 
 Validação: 59 testes aprovados, TypeScript e build concluídos.
 

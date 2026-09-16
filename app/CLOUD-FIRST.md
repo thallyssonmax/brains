@@ -1,6 +1,6 @@
 # Brains — persistência automática por conta
 
-Estado em 16/09/2026: implementação local validada; publicação autorizada pelo usuário em 16/09/2026.
+Estado em 16/09/2026: versão publicada e verificada em https://brains-puce.vercel.app/. Commit 792294a71df4e28a4737f47366ba68d6acdcfac9; deployment dpl_7FwBrQcdNxLh2YvgBZ1gjcTGapUh (READY).
 
 ## Problema corrigido
 O fluxo anterior salvava primeiro a biblioteca local e exigia sincronização manual. Todos os anexos precisavam ser enviados antes de qualquer texto ou progresso. Uma falha de áudio interrompia tudo. O novo fluxo usa o banco como fonte principal, sem botão de sincronização da biblioteca.
@@ -16,10 +16,10 @@ O fluxo anterior salvava primeiro a biblioteca local e exigia sincronização ma
 - A fila tenta novamente ao abrir, ao voltar a conexão/foco e a cada 30 segundos com o app aberto. O usuário pode tentar reenviar somente os anexos. Logout interrompe novas operações da instância.
 - Downloads ocorrem ao exibir a mídia. Falhar um arquivo não impede abrir a biblioteca ou revisar o texto.
 - Requisições HTTP têm limite de espera de 45 segundos. Tentativas repetidas de uma mesma operação usam o mesmo identificador durante a repetição automática.
-- Backup exporta também os arquivos; restauração substitui a biblioteca da conta e os rascunhos locais, com novos caminhos de mídia. Não há mais desfazer local da restauração; a tela informa isso antes de confirmar.
+- Backup foi retirado da interface; o código legado exporta também os arquivos; restauração substitui a biblioteca da conta e os rascunhos locais, com novos caminhos de mídia. Não há mais desfazer local da restauração; a tela informa isso antes de confirmar.
 
 ## Transição autorizada
-O usuário dispensou a preservação dos dados antigos de teste. A nova versão inicia em brains_cloud e em um banco local de rascunhos v3, sem importar brains_sync nem bibliotecas antigas. A conta de autenticação foi mantida. A produção atual continua usando o código anterior até a aprovação da publicação. Foi criada na nova biblioteca somente a área “Validação da nuvem”, com um card de teste, imagem mínima, áudio de teste de um segundo e uma revisão.
+O usuário dispensou a preservação dos dados antigos de teste. A nova versão inicia em brains_cloud e em um banco local de rascunhos v3, sem importar brains_sync nem bibliotecas antigas. A conta de autenticação foi mantida. A arquitetura está publicada. Foi criada na nova biblioteca somente a área “Validação da nuvem”, com um card de teste, imagem mínima, áudio de teste de um segundo e uma revisão.
 
 ## Evidências de validação
 - TypeScript: aprovado.
@@ -32,10 +32,13 @@ O usuário dispensou a preservação dos dados antigos de teste. A nova versão 
 - Advisors: nenhum novo aviso de RLS; permanece apenas a proteção contra senhas vazadas desativada, conforme decisão anterior do usuário.
 
 ## Limites e próximos passos
-- Publicação autorizada: versionar, publicar e validar a URL de produção. O teste em iPhone permanece pendente de retorno do usuário.
-- O teste real em iPhone/Safari da nova versão será feito após a publicação; a evidência atual é desktop e simulação de dois clientes independentes nos testes. Duas abas reais compartilham a sessão, portanto não substituem o teste com dois aparelhos.
+- Publicado; usuário confirmou persistência e agendamento no iPhone e navegador.
+- Usuário confirmou o teste em dois aparelhos. VoiceOver e teclado virtual permanecem pendentes.
 - Salvar e revisar exige internet. Rascunhos e arquivos ainda não enviados dependem do navegador do aparelho de origem; limpar seus dados antes do envio pode perder esses arquivos.
 - Voz de referência continua sendo síntese do dispositivo; não é arquivo enviado à nuvem.
-- Exclusão definitiva remove o card e histórico da biblioteca. Coleta automática de arquivos antigos sem referência no Storage ainda não foi implementada; deve ser uma etapa separada para controlar a cota.
+- Exclusão definitiva remove o card e histórico da biblioteca. Coleta automática implementada; consultar MEDIA-CLEANUP.md.
 - Atualizações são por consulta periódica/foco, não Supabase Realtime.
 - A tabela de operações idempotentes e o documento por conta precisam de políticas de retenção/normalização se o volume crescer. Não há promessa de armazenamento gratuito ilimitado.
+
+## Verificação após publicação
+O domínio principal carregou a biblioteca da nuvem e o progresso existente. A imagem carregou e o áudio apresentou readyState=4 sem erro, em produção. Nenhum erro de console observado. Teste no iPhone confirmado pelo usuário.

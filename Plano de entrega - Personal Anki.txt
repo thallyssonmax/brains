@@ -1,0 +1,28 @@
+PLANO DE ENTREGA — BRAINS
+Versão 2.0 | 16/09/2026 | Referência: PRD v2.0
+
+CONCLUÍDO
+- Protótipo e organização Área → Cards.
+- Cadastro com frente/texto/áudio e verso/texto/imagem; câmera e galeria.
+- FSRS 5.4.2, histórico, meta e limite global de novos.
+- Login e biblioteca principal na nuvem; mídia privada e fila independente.
+- Exclusão definitiva de cards/áreas e limpeza de anexos não referenciados.
+- GitHub público e deploy automático Vercel.
+- Validação pelo usuário: iPhone e navegador, mídia, revisão, agendamento e exclusão.
+- Primeira rodada de UX/acessibilidade e textos.
+- Documentação consolidada.
+
+PENDÊNCIAS
+- Validar VoiceOver, teclado virtual e zoom no iPhone; ampliar testes responsivos.
+- Descrição opcional de imagens e refinamentos apontados na auditoria.
+- Acompanhar uso real e cotas sem habilitar serviços pagos automaticamente.
+
+FUTURO, SEM COMPROMISSO DE ENTREGA ATUAL
+PWA offline, aplicativos iOS/Android, avaliação automática de pronúncia, importação Anki, analytics avançado.
+Backup foi retirado da interface por decisão do usuário; não é próxima etapa.
+Não há tarefa automática agendada: evolução conduzida pelo chat.
+
+ARQUITETURA ATUAL
+React/TypeScript/Vite; Supabase Auth/Postgres/Storage; IndexedDB somente para rascunhos e fila de anexos.
+Documento JSONB por conta, versão esperada e operação idempotente. Conflitos rejeitados, não mesclados.
+Revisões exigem rede. Não há passo fixo de 10 minutos; consultar app/REVISAO-ESPACADA.md.
