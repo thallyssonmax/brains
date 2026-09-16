@@ -5,5 +5,5 @@ export function CloudStatus({t}:{t:T;compact?:boolean}){
  const store=useStore();const [,render]=useState(0);
  useEffect(()=>store.subscribe(()=>render(n=>n+1)),[store]);
  if(!store.pendingCount&&!store.mediaFailed&&!store.cleanupFailed)return null;
- return <section className="notice" role="status">{store.pendingCount>0&&<p>{t('mediaPending')} ({store.pendingCount})</p>}{store.mediaFailed&&<><p>{t('mediaRetryHelp')}</p><button className="secondary" onClick={()=>void store.retryMedia().catch(()=>{})}>{t('retryAttachments')}</button></>}{store.cleanupFailed&&<><p>{t('mediaCleanupPending')}</p><button className="secondary" onClick={()=>void store.cleanupMedia()}>{t('retryCleanup')}</button></>}</section>;
+ return <section className={store.mediaFailed||store.cleanupFailed?"feedback feedback-warning":"feedback feedback-info"} role="status">{store.pendingCount>0&&<p>{t('mediaPending')} ({store.pendingCount})</p>}{store.mediaFailed&&<><p>{t('mediaRetryHelp')}</p><button className="secondary" onClick={()=>void store.retryMedia().catch(()=>{})}>{t('retryAttachments')}</button></>}{store.cleanupFailed&&<><p>{t('mediaCleanupPending')}</p><button className="secondary" onClick={()=>void store.cleanupMedia()}>{t('retryCleanup')}</button></>}</section>;
 }

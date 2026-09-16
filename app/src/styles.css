@@ -4,3 +4,18 @@ fieldset{border:0;padding:0;margin:0;min-width:0}input:not([type=file]),select,t
 .area-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}.area-actions button{font-size:14px;padding:13px 10px}.goal-total{font-size:22px;opacity:.7}.tile details{margin-top:18px;border-top:1px solid #e6ebf2;padding-top:10px}.tile summary{font-size:14px;color:#6c7890;cursor:pointer;padding:10px 0}.hero>.row{margin-top:8px}.hero .track{margin:18px 0}.hero>.row:last-child{font-size:14px}.good,.bad{font-size:16px}label:first-child{margin-top:0}
 
 .login-page{min-height:100dvh;display:grid;place-items:center;padding:24px;background:#f5f7fb}.login-card{width:100%;max-width:440px;padding:32px;border:1px solid #e0e6ef;border-radius:24px;background:white;box-shadow:0 12px 40px #17233b0a}.login-card h1{font-size:28px;margin:32px 0 12px}.login-card .panel{padding:0;border:0;box-shadow:none;background:transparent}.login-card .primary{width:100%;min-height:48px}.login-card input{font-size:16px}.login-card .brand{display:flex!important}@media(max-width:480px){.login-page{padding:20px}.login-card{padding:24px}}
+
+.dialog-close{width:44px;min-width:44px;height:44px;border-radius:10px;font-size:24px}
+.review-state{font-size:14px;line-height:1.5;color:#526078;margin:14px 0 0}
+.small,.muted{color:#526078}.back{min-height:44px}
+.panel,.entry{overflow-wrap:anywhere}
+input,select,textarea,button{scroll-margin-block:100px}
+@media(max-width:380px){.actions,.area-actions{grid-template-columns:1fr}.bottom .nav{padding-inline:10px}.main{padding-bottom:130px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+.feedback{padding:16px;border:1px solid;border-inline-start-width:4px;border-radius:12px;margin:16px 0;line-height:1.5}
+.feedback p{margin:0 0 8px}.feedback p:last-child{margin:0}
+.feedback-info{background:#eef3ff;border-color:#9bb7eb;color:#244574}
+.feedback-warning{background:#fff8e6;border-color:#b68119;color:#684500}
+.feedback-success{background:#edf8f0;border-color:#49875b;color:#205431}
+.error{border-inline-start-width:4px}
