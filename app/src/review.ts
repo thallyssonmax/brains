@@ -1,5 +1,5 @@
 import type {Card,Library,Side} from './model';
-export interface ReviewEvent {id:string;cardId:string;at:string;known:boolean;introduced?:boolean;log?:import('ts-fsrs').ReviewLog}
+export interface ReviewEvent {id:string;cardId:string;at:string;known:boolean;sessionId?:string;retryOf?:string;introduced?:boolean;log?:import('ts-fsrs').ReviewLog}
 export function cardSide(card:Card,back:boolean):Side {const side=back?card.back:card.front;return {...side,image:back?(card.back.image||card.front.image):undefined,imagePath:back?card.back.imagePath:undefined,imagePending:back?card.back.imagePending:undefined,audioText:side.text}}
 export function sharedCard(card:Card):Card {return {...card,front:{...card.front,image:undefined,imagePath:undefined,imagePending:undefined,audioText:''},back:{...card.back,image:card.back.image||card.front.image,audioText:''}}}
 export function dayKey(date:Date,timezone:string){return new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date)}

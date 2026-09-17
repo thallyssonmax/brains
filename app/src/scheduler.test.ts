@@ -1,10 +1,17 @@
 import {describe,it,expect} from 'vitest';
 import {initialLibrary,blankCard} from './model';
-import {applyReview,reviewQueue} from './scheduler';
+import {applyReview,reviewQueue,nextStudyDay} from './scheduler';
 function fixture(){const db=initialLibrary();db.preferences.timezone='UTC';db.preferences.newLimit=1;db.areas=[{id:'a',name:'English',archived:false,deleted:false}];db.decks=[{id:'d',areaId:'a',name:'English',language:'en',archived:false,deleted:false}];db.cards=[blankCard(db.decks[0]),blankCard(db.decks[0])];return db}
 const now=new Date('2026-09-13T12:00:00Z');
 describe('spaced reviews',()=>{
  it('persists scheduling and applies the global new limit, with idempotent events',()=>{const db=fixture();const c=reviewQueue(db,now)[0];const event={id:'e',cardId:c.id,at:now.toISOString(),known:false};applyReview(db,event);applyReview(db,event);expect(db.reviews).toHaveLength(1);expect(c.memory!.due>now).toBe(true);expect(reviewQueue(db,now)).toHaveLength(0);expect(reviewQueue(db,new Date(c.memory!.due))[0].id).toBe(c.id);expect(c.memory!.reps).toBe(1)});
- it('prioritizes overdue cards and excludes archived cards',()=>{const db=fixture();const c=reviewQueue(db,now)[0];applyReview(db,{id:'e',cardId:c.id,at:now.toISOString(),known:true});const tomorrow=new Date('2026-09-15T12:00:00Z');expect(reviewQueue(db,tomorrow)[0].id).toBe(c.id);c.archived=true;expect(reviewQueue(db,tomorrow).some(v=>v.id===c.id)).toBe(false)});
+ it('prioritizes overdue cards and excludes archived cards',()=>{const db=fixture();const c=reviewQueue(db,now)[0];applyReview(db,{id:'e',cardId:c.id,at:now.toISOString(),known:true});const tomorrow=new Date(new Date(c.memory!.due).getTime()+86400000);expect(reviewQueue(db,tomorrow)[0].id).toBe(c.id);c.archived=true;expect(reviewQueue(db,tomorrow).some(v=>v.id===c.id)).toBe(false)});
  it('rejects early reviews without changing history',()=>{const db=fixture();const c=reviewQueue(db,now)[0];applyReview(db,{id:'1',cardId:c.id,at:now.toISOString(),known:true});expect(()=>applyReview(db,{id:'2',cardId:c.id,at:now.toISOString(),known:true})).toThrow('conflict');expect(db.reviews).toHaveLength(1)});
+});
+
+describe('daily-only scheduling',()=>{
+ it('allows one failed-card retry only in its original session',()=>{const db=fixture();const c=reviewQueue(db,now)[0];applyReview(db,{id:'first',sessionId:'s',cardId:c.id,at:now.toISOString(),known:false});expect(reviewQueue(db,new Date('2026-09-13T23:59:59Z'))).toHaveLength(0);expect(()=>applyReview(db,{id:'wrong',sessionId:'other',retryOf:'first',cardId:c.id,at:now.toISOString(),known:true})).toThrow('conflict');applyReview(db,{id:'retry',sessionId:'s',retryOf:'first',cardId:c.id,at:now.toISOString(),known:false});expect(c.memory!.due>=nextStudyDay(now,'UTC')).toBe(true);expect(()=>applyReview(db,{id:'third',sessionId:'s',retryOf:'first',cardId:c.id,at:now.toISOString(),known:false})).toThrow('conflict');expect(db.reviews).toHaveLength(2)});
+ it('does not schedule a successful card again today',()=>{const db=fixture();const c=reviewQueue(db,now)[0];applyReview(db,{id:'good',cardId:c.id,at:now.toISOString(),known:true});expect(c.memory!.due>=nextStudyDay(now,'UTC')).toBe(true)});
+ it('handles local midnight and daylight saving boundaries',()=>{expect(nextStudyDay(new Date('2026-09-17T02:59:00Z'),'America/Sao_Paulo').toISOString()).toBe('2026-09-17T03:00:00.000Z');expect(nextStudyDay(new Date('2026-03-08T06:30:00Z'),'America/New_York').toISOString()).toBe('2026-03-09T04:00:00.000Z')});
+ it('does not revive a legacy intraday card already reviewed today',()=>{const db=fixture();const c=db.cards[0];applyReview(db,{id:'legacy',cardId:c.id,at:now.toISOString(),known:false});c.memory!.due=new Date(now.getTime()+60000);expect(reviewQueue(db,new Date(now.getTime()+120000)).some(x=>x.id===c.id)).toBe(false)});
 });

@@ -4,7 +4,7 @@ Atualizado em 16/09/2026. Fontes: src/scheduler.ts, src/review.ts, src/App.tsx e
 
 5. REVISÃO ESPAÇADA — REGRA IMPLEMENTADA
 Biblioteca ts-fsrs 5.4.2.
-Configuração: request_retention=0.9; enable_fuzz=false; enable_short_term=true.
+Configuração: request_retention=0.9; enable_fuzz=false; enable_short_term=false.
 Os demais parâmetros e passos são os padrões da versão fixada da biblioteca. Não há otimização personalizada de parâmetros por usuário.
 90% é um parâmetro do agendamento, não garantia de retenção.
 
@@ -16,7 +16,7 @@ Fluxo:
 5. Salvar evento e novo estado FSRS na mesma alteração versionada da biblioteca.
 Virar o card não salva a revisão. Sair antes de Próximo card não registra a tentativa.
 Sei → Rating.Good. Não sei → Rating.Again. Difícil/Fácil não são oferecidos.
-O FSRS calcula a próxima data conforme estado anterior, resposta e instante da revisão. Aprendizagem/reaprendizagem podem retornar no mesmo dia.
+O FSRS calcula a próxima data conforme estado anterior, resposta e instante da revisão. O próximo agendamento fica no dia seguinte ou depois, no fuso da conta. Um primeiro erro permite somente uma tentativa extra na sessão atual.
 NÃO existe regra fixa de 10 minutos nem sequência universal de dias. Essa proposta antiga foi substituída pelos resultados da biblioteca.
 Eventos repetidos com o mesmo identificador não duplicam o histórico. Revisões antecipadas ou de cards que deixaram de ser elegíveis são rejeitadas.
 O algoritmo roda no cliente; banco mantém o resultado e o histórico. Não existe tarefa agendada do servidor para liberar cada card.
@@ -27,7 +27,7 @@ Fila:
 - Primeiro todos os cards com agendamento vencido (due <= agora), ordenados pela data mais antiga. Não há prioridade separada por estado de aprendizagem.
 - Depois cards sem estado FSRS, ordenados por criação e identificador, respeitando o saldo global de novos do dia.
 - Não antecipa cards futuros para completar a meta.
-A sessão é uma lista selecionada ao iniciar. Cards que vencem depois precisam de uma nova entrada na revisão; não são reinseridos automaticamente na sessão já aberta.
+A sessão é uma lista selecionada ao iniciar. O primeiro erro confirmado acrescenta o card ao fim da sessão uma única vez; a tentativa extra não gera outra repetição. Cards já revisados hoje ficam fora de novas sessões.
 Revisões confirmadas persistem. O índice de uma sessão interrompida não é persistido; uma nova sessão recalcula a fila.
 
 6. META E TEMPO
@@ -49,3 +49,5 @@ review.test.ts: contagem distinta, fuso e lados das mídias.
 cloud-store.test.ts: recuperação por outra instância, evento/estado e conflitos.
 Não há intervalo fixo de 10 minutos. Atualizar a versão de ts-fsrs exige revalidar os resultados e documentar mudanças dos padrões.
 O relógio do cliente fornece o instante; alterações incorretas no relógio do aparelho podem afetar a elegibilidade.
+
+17/09/2026 — Revisão diária única: esta regra substitui os retornos intradiários anteriores. FSRS 5.4.2 com enable_short_term=false; próxima data nunca anterior ao início do dia seguinte no fuso da conta. Primeiro erro confirmado adiciona uma única tentativa ao fim da sessão. A repetição (acerto ou erro) também é registrada, sem gerar terceira tentativa. Eventos guardam sessionId e retryOf; somente a sessão original pode repetir, com validação de origem, card ativo e ausência de repetição prévia. Sair/atualizar encerra a sessão; o card segue para outro dia. Meta conta o card uma vez; tentativas incluem a repetição. Cards já revisados hoje não entram em uma nova sessão, inclusive agendamentos legados intradiários. Datas antigas não são regravadas em massa; exibição e fila respeitam o dia mínimo.
