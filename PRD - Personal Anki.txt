@@ -16,9 +16,9 @@ Conteúdo, preferências, histórico e agendamentos são lidos e salvos automati
 Criar um card a partir de uma área atribui essa área automaticamente. O editor não oferece seletor de área.
 Dois painéis:
 - Frente: Pergunta obrigatória e áudio opcional.
-- Verso: Resposta obrigatória e imagem opcional.
+- Verso: Resposta obrigatória, imagem e áudio opcionais.
 Textos com até 2.000 caracteres. Exemplos podem integrar o texto; não existe campo separado de exemplo.
-Áudio somente na frente, também na prévia e na revisão. Opções: voz de referência (padrão), minha gravação, importar áudio, sem áudio.
+Áudio independente na frente e no verso, também na prévia e na revisão. Cada lado lê seu próprio texto. Opções: voz de referência (padrão), minha gravação, importar áudio, sem áudio.
 Referência lê a frente no idioma da área, independentemente do idioma da interface. Não há Texto para ouvir nem seletor de pronúncia por card. Usa síntese nativa do dispositivo, sem gerar arquivo na nuvem. Disponibilidade e qualidade variam conforme as vozes instaladas.
 Gravação de até 30 segundos; ouvir, parar, regravar e remover. Avaliação automática de pronúncia não implementada. Alterar o texto após gravar/importar exige conferir a correspondência ou manter o áudio explicitamente.
 Imagem única no verso: Tirar foto ou Escolher foto. JPG, PNG, WebP ou GIF; até 5 MB. Áudios também têm limite de 5 MB e dependem de formato reproduzível pelo navegador.
@@ -128,3 +128,5 @@ app/UX-DECISIONS.md: decisões de interface.
 app/DEPLOY.md: publicação.
 Plano de entrega - Personal Anki.txt: status e pendências.
 docs/historico/: documentos anteriores, sem validade como especificação atual.
+
+Atualização de áudio: o verso oferece referência, gravação, importação e sem áudio. Novos cards iniciam com referência no verso em pt-BR; cards existentes preservam sua opção. Frente mantém idioma da área. Os arquivos dos lados são independentes.

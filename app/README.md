@@ -10,7 +10,7 @@ Configurar .env.local conforme .env.example, apenas URL e chave pública Supabas
 ## Produto atual
 - Conta autenticada; salvamento automático no Supabase, com internet.
 - Áreas contêm cards diretamente; área herdada ao cadastrar.
-- Frente: pergunta e áudio. Verso: resposta e imagem/câmera/galeria.
+- Frente: pergunta e áudio. Verso: resposta, áudio próprio e imagem/câmera/galeria.
 - Voz do dispositivo, gravação de até 30 segundos, importação ou sem áudio; até 5 MB por mídia.
 - FSRS 5.4.2 com alvo 90%; confirmação em Próximo card; vencidos antes de novos.
 - Meta global por cards distintos e limite separado de novos.
@@ -37,3 +37,5 @@ Backup não está na interface. PWA offline e apps nativos são futuros.
 npm test; npm run build. Última entrega funcional: 59 testes, TypeScript e build aprovados.
 Usuário confirmou câmera/microfone, persistência, exclusão de área e agendamento iguais no iPhone/navegador.
 Pendentes: VoiceOver, teclado virtual/zoom e descrição opcional de imagens.
+
+Atualização de áudio: o verso oferece referência, gravação, importação e sem áudio. Novos cards iniciam com referência no verso em pt-BR; cards existentes preservam sua opção. Frente mantém idioma da área. Os arquivos dos lados são independentes.
