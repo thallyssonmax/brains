@@ -19,3 +19,5 @@ input,select,textarea,button{scroll-margin-block:100px}
 .feedback-warning{background:#fff8e6;border-color:#b68119;color:#684500}
 .feedback-success{background:#edf8f0;border-color:#49875b;color:#205431}
 .error{border-inline-start-width:4px}
+
+.reference-audio{width:100%;text-align:center}.reference-audio summary{font-size:14px;min-height:44px;padding:12px;cursor:pointer;color:#526078}.reference-audio label{text-align:left}.reference-audio .small{margin:4px 0}
