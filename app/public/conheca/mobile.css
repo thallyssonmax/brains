@@ -1,0 +1,132 @@
+/* Mobile usability: readable type, comfortable targets and flexible content. */
+.hero-copy,.hero-visual,.steps li>div,.level,.science-copy{min-width:0}
+img,svg{max-width:100%}
+a,button{touch-action:manipulation}
+@media(max-width:900px){
+  html{scroll-padding-top:148px}
+  .navigation{height:auto;min-height:112px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding-block:10px}
+  .navigation .brand{font-size:20px;min-height:44px}
+  .navigation>.button{font-size:14px;min-height:44px;padding:10px 12px;gap:8px}
+  .navlinks{grid-column:1/-1;order:initial;width:100%;display:flex;justify-content:center;gap:12px;margin:0;font-size:14px}
+  .navlinks a{display:flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px}
+  .hero{grid-template-columns:1fr;gap:32px;max-width:720px}
+  .hero-copy{max-width:580px;margin-inline:auto}
+  .hero-copy p,.hero-copy .lead{font-size:16px;max-width:none;line-height:1.65}
+  .hero .eyebrow{font-size:12px;letter-spacing:.8px;line-height:1.5}
+  .hero h1{font-size:clamp(2rem,6.5vw,3.1rem);letter-spacing:-1.3px;line-height:1.12;text-wrap:initial}
+  .hero-actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:24px}
+  .hero-actions .button,.hero-actions .text-link{width:100%;min-height:48px;justify-content:center;font-size:16px;padding:12px 16px}
+  .hero-visual{width:100%;max-width:410px;transform:none;margin:0 auto;padding:20px}
+  .hero-visual:before{display:none}
+  .visual-top{flex-wrap:wrap;gap:10px}
+  .mini-brand{font-size:14px;line-height:1.5;flex-wrap:wrap}
+  .visual-top .pill,.pill{font-size:13px}
+  .demo-card{min-height:260px;padding:24px 16px}
+  .demo-card .button{font-size:15px;min-height:48px;width:100%;padding:12px}
+  .card-content h2{font-size:clamp(2rem,8vw,2.6rem);overflow-wrap:anywhere}
+  .card-content p,.visual-bottom p,.visual-bottom strong{font-size:14px;line-height:1.5}
+  .card-label,.demo-caption{font-size:12px;line-height:1.5}
+  .eyebrow{font-size:12px;letter-spacing:.8px;line-height:1.5}
+  .science>.container{display:block}
+  .science-copy p,.science-copy .statement{font-size:16px;line-height:1.65}
+  .chart{margin-top:28px;padding:18px 12px}
+  .chart-legend{font-size:14px;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
+  .chart svg text{font-size:19px}
+  figcaption{font-size:13px;line-height:1.5;margin-top:12px}
+  .evidence{flex-wrap:wrap;padding:22px;gap:16px}
+  .evidence p{min-width:0;flex-basis:100%;font-size:16px;max-width:none}
+  .evidence .text-link{font-size:14px;min-height:44px}
+  .how-layout{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr;gap:14px}
+  .steps li,.steps li:first-child,.steps li:last-child{padding:22px;display:flex;flex-direction:row;gap:14px}
+  .steps h3{font-size:19px;line-height:1.3}
+  .steps p{font-size:16px;line-height:1.65}
+  .step-number{width:32px;min-width:32px;height:32px;font-size:13px}
+  .illustration{display:block;width:min(340px,100%);margin:0 auto 12px}
+  .illustration img{max-height:220px;object-fit:contain}
+  .levels{grid-template-columns:1fr;max-width:580px;margin-inline:auto;gap:24px}
+  .level{padding:24px}
+  .level:not(:last-child):after{content:"↓";right:calc(50% - 14px);top:auto;bottom:-27px;width:30px;height:30px}
+  .level-stage{font-size:12px;line-height:1.5}
+  .level h3{font-size:19px;line-height:1.4}
+  .sample-back p{font-size:16px;min-height:0}
+  .progress-note{font-size:14px;line-height:1.6}
+  .transition-note{font-size:16px;line-height:1.65}
+  .closing .eyebrow{font-size:12px}
+  .closing .button{font-size:16px;min-height:48px}
+  footer{flex-wrap:wrap;gap:12px;padding-bottom:max(24px,env(safe-area-inset-bottom))}
+  footer>a{min-height:44px;display:flex;align-items:center}
+  footer>a:last-child,footer>span{font-size:14px}
+}
+@media(max-width:480px){
+  .container{width:calc(100% - 32px)}
+  .navigation{gap:4px 8px}
+  .navigation>.button{font-size:13px;padding-inline:10px}
+  .navigation .mark{width:32px;height:32px;font-size:22px}
+  .navigation .brand{gap:7px;font-size:19px}
+  .hero{width:calc(100% - 24px);padding:30px 20px 24px;border-radius:20px}
+  .hero .eyebrow:before{display:none}
+  .hero h1{font-size:clamp(2rem,9vw,2.6rem)}
+  .hero-visual{padding:14px}
+  .section{padding-block:48px}
+  .section-heading h2,.science .section-heading h2,#como-usar .section-heading h2,.progressive .section-heading h2,.closing h2{font-size:clamp(1.75rem,7.7vw,2.1rem);letter-spacing:-.8px;line-height:1.18;text-wrap:initial}
+  #como-usar{padding:32px 16px}
+  .steps li,.steps li:first-child,.steps li:last-child{padding:20px;display:grid;grid-template-columns:32px minmax(0,1fr);gap:14px 12px;align-items:center}
+  .steps li>div{display:contents}
+  .steps li h3{grid-column:2;margin:0;padding:0}
+  .steps li p{grid-column:1/-1}
+  .steps h3{margin-bottom:10px}
+  .closing{padding:36px 22px}
+  .closing .button{width:100%}
+  .level{padding:22px}
+}
+@media(max-width:360px){
+  .navigation{grid-template-columns:1fr}
+  .navigation .brand{justify-self:center}
+  .navigation>.button{width:100%;font-size:14px}
+  .navlinks{gap:4px}
+  html{scroll-padding-top:192px}
+  .hero{padding-inline:16px}
+  .hero-visual{padding:12px}
+  .visual-top .pill{display:none}
+}
+@media(max-height:500px) and (orientation:landscape){header{position:relative}html{scroll-padding-top:20px}}
+@media(max-width:900px){.navigation>.brand{grid-column:1;grid-row:1}.navigation>.button{grid-column:2;grid-row:1}.navlinks{grid-row:2}.chart svg text:last-child{text-anchor:end;transform:translateX(138px)}}@media(max-width:360px){.navigation>.button{grid-column:1;grid-row:2}.navlinks{grid-row:3}}
+
+/* Visual hierarchy stays distinct without shrinking body copy or touch targets. */
+@media(max-width:700px){
+  .hero .eyebrow,.eyebrow,.closing .eyebrow{font-size:.75rem;font-weight:650;letter-spacing:.65px;margin-bottom:16px;line-height:1.6}
+  .hero h1{font-size:clamp(2.1rem,9.4vw,2.8rem);line-height:1.1;letter-spacing:-1.2px;font-weight:700;margin-bottom:24px;text-wrap:balance}
+  .hero-copy .lead{font-size:1.0625rem;line-height:1.55;color:#fff;margin-bottom:16px}
+  .hero-copy p:not(.lead){font-size:1rem;line-height:1.65;color:#e1eaff}
+  .hero-actions{margin-top:24px;gap:4px}
+  .hero-actions .button{font-size:1rem;font-weight:700;min-height:50px}
+  .hero-actions .text-link{font-size:.875rem;font-weight:550;min-height:44px}
+  .hero-visual{margin-top:4px}
+  .mini-brand{font-size:.8125rem;font-weight:600}
+  .demo-caption{color:#64738d}
+  .section{padding-block:56px}
+  .section-heading h2,.science .section-heading h2,#como-usar .section-heading h2,.progressive .section-heading h2,.closing h2{font-size:clamp(1.8rem,7.9vw,2.2rem);line-height:1.16;letter-spacing:-.9px;font-weight:650;margin-bottom:20px;text-wrap:balance}
+  .section-heading>p{line-height:1.65;margin-bottom:0}
+  .science-copy p{margin-bottom:18px}
+  .science-copy .statement{font-weight:600}
+  .evidence-number{font-size:2.5rem}
+  .evidence-number span{font-size:.8125rem;font-weight:500;letter-spacing:0}
+  #como-usar{padding-block:36px}
+  .how-layout{gap:24px;margin-top:24px}
+  .illustration img{max-height:180px}
+  .illustration>p{font-size:1.125rem;line-height:1.4;font-weight:550}
+  .image-caption{margin-bottom:16px}
+  .steps{gap:16px}
+  .steps h3,.level h3{font-size:1.125rem;line-height:1.35;font-weight:650;letter-spacing:-.25px}
+  .steps p{font-size:1rem;line-height:1.6}
+  .step-number{font-size:.75rem;background:#edf2ff;font-weight:650}
+  .level-stage{font-size:.75rem;letter-spacing:.55px}
+  .level h3{margin-top:12px;margin-bottom:20px}
+  .sample-front p{font-size:1.75rem;line-height:1.25;margin-top:10px}
+  .sample-back p{font-size:1rem;line-height:1.6}
+  .transition-note{font-size:1rem;text-align:left;padding:20px}
+  .closing{padding-block:40px}
+  .closing h2{margin-bottom:18px}
+  .closing p{font-size:1rem;line-height:1.65;margin-bottom:24px}
+}
