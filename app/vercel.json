@@ -1,1 +1,1 @@
-{"framework": "vite", "buildCommand": "npm run build", "outputDirectory": "dist"}
+{"framework":"vite","buildCommand":"npm run build","outputDirectory":"dist","redirects":[{"source":"/conheca","destination":"/site","permanent":true},{"source":"/conheca/:path*","destination":"/site/:path*","permanent":true}]}
