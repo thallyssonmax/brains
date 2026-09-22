@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {initialLibrary,blankCard} from './model';
-import {applyReview,reviewQueue,nextStudyDay} from './scheduler';
+import {applyReview,reviewQueue,nextStudyDay,startStudyDay,effectiveDue} from './scheduler';
 function fixture(){const db=initialLibrary();db.preferences.timezone='UTC';db.preferences.newLimit=1;db.areas=[{id:'a',name:'English',archived:false,deleted:false}];db.decks=[{id:'d',areaId:'a',name:'English',language:'en',archived:false,deleted:false}];db.cards=[blankCard(db.decks[0]),blankCard(db.decks[0])];return db}
 const now=new Date('2026-09-13T12:00:00Z');
 describe('spaced reviews',()=>{
@@ -14,4 +14,25 @@ describe('daily-only scheduling',()=>{
  it('does not schedule a successful card again today',()=>{const db=fixture();const c=reviewQueue(db,now)[0];applyReview(db,{id:'good',cardId:c.id,at:now.toISOString(),known:true});expect(c.memory!.due>=nextStudyDay(now,'UTC')).toBe(true)});
  it('handles local midnight and daylight saving boundaries',()=>{expect(nextStudyDay(new Date('2026-09-17T02:59:00Z'),'America/Sao_Paulo').toISOString()).toBe('2026-09-17T03:00:00.000Z');expect(nextStudyDay(new Date('2026-03-08T06:30:00Z'),'America/New_York').toISOString()).toBe('2026-03-09T04:00:00.000Z')});
  it('does not revive a legacy intraday card already reviewed today',()=>{const db=fixture();const c=db.cards[0];applyReview(db,{id:'legacy',cardId:c.id,at:now.toISOString(),known:false});c.memory!.due=new Date(now.getTime()+60000);expect(reviewQueue(db,new Date(now.getTime()+120000)).some(x=>x.id===c.id)).toBe(false)});
+});
+
+describe('calendar-day availability',()=>{
+ it('releases legacy afternoon reviews at local midnight, not before',()=>{
+  const db=fixture();db.preferences.timezone='America/Sao_Paulo';const c=reviewQueue(db,now)[0];
+  applyReview(db,{id:'old',cardId:c.id,at:now.toISOString(),known:true});
+  c.memory!.due=new Date('2026-09-22T18:47:00Z');
+  expect(effectiveDue(db,c)?.toISOString()).toBe('2026-09-22T03:00:00.000Z');
+  expect(reviewQueue(db,new Date('2026-09-22T02:59:59Z')).some(x=>x.id===c.id)).toBe(false);
+  expect(reviewQueue(db,new Date('2026-09-22T03:00:00Z')).some(x=>x.id===c.id)).toBe(true);
+  applyReview(db,{id:'today',cardId:c.id,at:'2026-09-22T13:00:00Z',known:true});
+  expect(reviewQueue(db,new Date('2026-09-22T23:00:00Z')).some(x=>x.id===c.id)).toBe(false);
+  expect(c.memory!.due).toEqual(startStudyDay(new Date(c.memory!.due),db.preferences.timezone));
+ });
+ it('normalizes both ratings to midnight while preserving the future calendar date',()=>{
+  for(const known of [true,false]){const db=fixture();db.preferences.timezone='Asia/Kolkata';const c=reviewQueue(db,now)[0];applyReview(db,{id:'r',cardId:c.id,at:now.toISOString(),known});expect(c.memory!.due).toEqual(startStudyDay(new Date(c.memory!.due),db.preferences.timezone));expect(c.memory!.due>=nextStudyDay(now,db.preferences.timezone)).toBe(true)}
+ });
+ it('finds midnight across short and long DST days',()=>{
+  expect(startStudyDay(new Date('2026-03-08T18:00:00Z'),'America/New_York').toISOString()).toBe('2026-03-08T05:00:00.000Z');
+  expect(startStudyDay(new Date('2026-11-01T18:00:00Z'),'America/New_York').toISOString()).toBe('2026-11-01T04:00:00.000Z');
+ });
 });
