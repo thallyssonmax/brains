@@ -1,0 +1,11 @@
+import {it,expect,vi,beforeEach} from 'vitest';
+import compress from 'browser-image-compression';
+import {optimizeImage} from './image-compression';
+vi.mock('browser-image-compression',()=>({default:vi.fn()}));
+const file=(size:number,type='image/jpeg')=>new File([new Uint8Array(size)],'photo',{type});
+beforeEach(()=>vi.resetAllMocks());
+it('uses moderate quality, local worker and smaller output',async()=>{const input=file(1000);const output=file(300);vi.mocked(compress).mockResolvedValue(output);expect(await optimizeImage(input)).toBe(output);expect(compress).toHaveBeenCalledWith(input,expect.objectContaining({initialQuality:0.8,maxWidthOrHeight:1600,preserveExif:false,useWebWorker:true}));});
+it('keeps original when output is larger or compression fails',async()=>{const input=file(100);vi.mocked(compress).mockResolvedValue(file(200));expect(await optimizeImage(input)).toBe(input);vi.mocked(compress).mockRejectedValue(Error());expect(await optimizeImage(input)).toBe(input);});
+it('accepts a large camera photo only when final output fits storage limit',async()=>{const input=file(6*1024*1024);vi.mocked(compress).mockResolvedValue(file(1000));expect((await optimizeImage(input)).size).toBe(1000);vi.mocked(compress).mockRejectedValue(Error());await expect(optimizeImage(input)).rejects.toThrow('imageOutputLimit');});
+it('preserves animations',async()=>{const gif=file(100,'image/gif');expect(await optimizeImage(gif)).toBe(gif);const webp=new File(['RIFFxxxxWEBPxxxxANIMxxxx'],'a.webp',{type:'image/webp'});expect(await optimizeImage(webp)).toBe(webp);expect(compress).not.toHaveBeenCalled();});
+it('rejects unsupported, empty and oversized input',async()=>{await expect(optimizeImage(file(10,'image/heic'))).rejects.toThrow('imageInputLimit');await expect(optimizeImage(file(0))).rejects.toThrow('imageInputLimit');await expect(optimizeImage(file(21*1024*1024))).rejects.toThrow('imageInputLimit');});
