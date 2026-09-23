@@ -1,7 +1,8 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
+import {authRedirect} from './routes';
 export type AuthMode='login'|'signup'|'forgot'|'reset';
 export async function submitAuth(client:SupabaseClient,mode:AuthMode,email:string,password:string,origin:string){
- const redirect=new URL('/',origin).href;
+ const redirect=authRedirect(origin);
  if(mode==='login')return client.auth.signInWithPassword({email:email.trim(),password});
  if(mode==='signup')return client.auth.signUp({email:email.trim(),password,options:{emailRedirectTo:redirect}});
  if(mode==='forgot')return client.auth.resetPasswordForEmail(email.trim(),{redirectTo:redirect+'?auth=reset'});

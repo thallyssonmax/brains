@@ -4,9 +4,9 @@ Implementação: cadastro e login por e-mail/senha, confirmação e reenvio, rec
 
 ## Configuração para produção
 - Supabase → Authentication → Sign In / Providers: permitir cadastro, Email habilitado, confirmação de e-mail mantida.
-- URL Configuration: Site URL https://brains-puce.vercel.app e permitir https://brains-puce.vercel.app/ e https://brains-puce.vercel.app/?auth=reset. Não usar curinga para domínios de terceiros.
+- URL Configuration: Site URL https://www.heybrains.app/login. Permitir /login e /login?auth=reset nas origens https://heybrains.app, https://www.heybrains.app e https://brains-puce.vercel.app. Manter também / e /?auth=reset para links emitidos antes da mudança. Não usar curinga para domínios de terceiros.
 - Configurar SMTP próprio para confirmação, reenvio e recuperação para endereços públicos. O serviço padrão Supabase só envia para membros da equipe; não serve para lançamento público.
-- Google Cloud → Google Auth Platform: cliente OAuth do tipo Web, público externo; origem https://brains-puce.vercel.app; redirect URI https://rtbfieorpmevebwlquvs.supabase.co/auth/v1/callback. Usar apenas openid, email e profile. Publicar o consentimento para público externo (modo de testes restringe usuários).
+- Google Cloud → Google Auth Platform: cliente OAuth do tipo Web, público externo; origens https://heybrains.app e https://www.heybrains.app; redirect URI https://rtbfieorpmevebwlquvs.supabase.co/auth/v1/callback. Usar apenas openid, email e profile. Publicar o consentimento para público externo (modo de testes restringe usuários).
 - Cadastrar Client ID e Client Secret no provedor Google do Supabase e ativá-lo. Nunca incluir o secret no frontend ou no GitHub.
 - O botão Google consulta /auth/v1/settings e aparece apenas quando o provedor está ativo. Não requer novo deploy ao ativá-lo.
 
@@ -15,3 +15,4 @@ O cliente SPA processa os retornos de confirmação/OAuth com detectSessionInUrl
 
 ## Validação pendente de configuração externa
 Testar uma conta nova real com confirmação recebida, recuperação por link e login Google em celular e desktop. Conferir usuário A sem acesso à biblioteca do usuário B. Não considerar Google liberado antes da ativação das credenciais. Não considerar entrega pública de e-mails validada sem SMTP e teste de recebimento.
+

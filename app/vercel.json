@@ -1,1 +1,21 @@
-{"framework":"vite","buildCommand":"npm run build","outputDirectory":"dist","redirects":[{"source":"/conheca","destination":"/site","permanent":true},{"source":"/conheca/:path*","destination":"/site/:path*","permanent":true}]}
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework":"vite",
+  "buildCommand":"npm run build",
+  "outputDirectory":"dist",
+  "redirects": [
+    {"source":"/conheca","destination":"/","permanent":true},
+    {"source":"/conheca/index.html","destination":"/","permanent":true},
+    {"source":"/conheca/:path*","destination":"/site/:path*","permanent":true},
+    {"source":"/site","destination":"/","permanent":true},
+    {"source":"/site/","destination":"/","permanent":true},
+    {"source":"/site/index.html","destination":"/","permanent":true},
+    {"source":"/today","destination":"/home","permanent":true},
+    {"source":"/decks","destination":"/areas","permanent":true},
+    {"source":"/app","destination":"/home","permanent":true}
+  ],
+  "rewrites": [
+    {"source":"/","destination":"/index.html"},
+    {"source":"/:path*","destination":"/product.html"}
+  ]
+}

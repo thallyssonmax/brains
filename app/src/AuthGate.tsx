@@ -6,7 +6,10 @@ import {cloud} from './cloud';
 import {AuthForm} from './AuthForm';
 import {authTexts} from './auth-texts';
 import type {Locale} from './model';
+import {Navigate,useLocation,useNavigate,Link} from 'react-router-dom';
+import {accessRedirect,paths,productRoute} from './routes';
 export function AuthGate({children}:{children:ReactNode}){
+ const location=useLocation(),navigate=useNavigate();
  const [user,setUser]=useState<User|null>(null),[loading,setLoading]=useState(!!cloud),[locale,setLocale]=useState<Locale>(()=>navigator.language.startsWith('es')?'es':navigator.language.startsWith('en')?'en':'pt');
  const [recovery,setRecovery]=useState(()=>new URLSearchParams(window.location.search).get('auth')==='reset'||new URLSearchParams(window.location.hash.slice(1)).get('type')==='recovery');
  const [callbackError]=useState(()=>new URLSearchParams(window.location.hash.slice(1)).has('error')||new URLSearchParams(window.location.search).has('error'));
@@ -15,7 +18,10 @@ export function AuthGate({children}:{children:ReactNode}){
  const {data}=cloud.auth.onAuthStateChange((_event,session)=>{if(active){if(_event==='PASSWORD_RECOVERY')setRecovery(true);setUser(session?.user??null);setLoading(false)}});
  return()=>{active=false;data.subscription.unsubscribe();cancelSpeech()};
  },[]);
- if(user&&!recovery)return <AccountStore key={user.id} userId={user.id}>{children}</AccountStore>;
+ const redirect=!loading?accessRedirect(location.pathname,!!user,recovery):null;
+ if(redirect)return <Navigate to={redirect} replace/>;
+ if(!loading&&user&&!recovery&&productRoute(location.pathname))return <AccountStore key={user.id} userId={user.id}>{children}</AccountStore>;
+ if(!loading&&location.pathname!==paths.login)return <main className="login-page"><div className="login-card"><h1>404</h1><p>{locale==='pt'?'Página não encontrada.':locale==='es'?'Página no encontrada.':'Page not found.'}</p><Link to={user?paths.home:paths.login}>{locale==='pt'?'Acessar o Brains':locale==='es'?'Acceder a Brains':'Open Brains'}</Link></div></main>;
 
- return <main className="login-page"><div className="login-card"><div className="brand"><span className="mark">B</span>Brains</div><label htmlFor="auth-locale">{authTexts[locale].language}</label><select id="auth-locale" value={locale} onChange={e=>setLocale(e.target.value as Locale)}><option value="pt">Português (Brasil)</option><option value="en">English</option><option value="es">Español</option></select>{loading?<p role="status">{locale==='pt'?'Carregando sua conta…':locale==='es'?'Cargando tu cuenta…':'Loading your account…'}</p>:<AuthForm locale={locale} recovery={recovery&&!!user} callbackError={callbackError} onRecovered={()=>{setRecovery(false);window.history.replaceState(null,'',window.location.pathname)}}/>}</div></main>;
+ return <main className="login-page"><div className="login-card"><a href={paths.landing} className="brand"><span className="mark">B</span>Brains</a><label htmlFor="auth-locale">{authTexts[locale].language}</label><select id="auth-locale" value={locale} onChange={e=>setLocale(e.target.value as Locale)}><option value="pt">Português (Brasil)</option><option value="en">English</option><option value="es">Español</option></select>{loading?<p role="status">{locale==='pt'?'Carregando sua conta…':locale==='es'?'Cargando tu cuenta…':'Loading your account…'}</p>:<AuthForm locale={locale} recovery={recovery&&!!user} callbackError={callbackError} onRecovered={()=>{setRecovery(false);navigate(paths.home,{replace:true})}}/>}</div></main>;
 }
