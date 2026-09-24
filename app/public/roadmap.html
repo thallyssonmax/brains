@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roadmap de Construção — Brains</title>
+  <style>
+    :root {
+      --bg: #f7f8f6;
+      --surface: #ffffff;
+      --surface-soft: #f0f5f1;
+      --text: #16181d;
+      --muted: #6b7280;
+      --border: #e4e7e5;
+      --accent: #16894f;
+      --accent-soft: #e8f6ee;
+      --warning: #b97800;
+      --shadow: 0 12px 30px rgba(20, 30, 24, 0.06);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .container {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0 72px;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 56px);
+      line-height: 1.04;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin: 14px 0 0;
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .reset-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .2s ease;
+      white-space: nowrap;
+    }
+
+    .reset-btn:hover {
+      border-color: #cfd5d0;
+      transform: translateY(-1px);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .summary-value {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .progress-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .progress-title {
+      font-weight: 800;
+    }
+
+    .progress-percent {
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    .progress-bar {
+      height: 10px;
+      background: #edf0ee;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+      border-radius: inherit;
+      transition: width .25s ease;
+    }
+
+    .phases {
+      display: grid;
+      gap: 18px;
+    }
+
+    .phase {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .phase.current {
+      border-color: #bfe4cd;
+    }
+
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #fff, #fcfdfc);
+    }
+
+    .phase.current .phase-header {
+      background: var(--accent-soft);
+    }
+
+    .phase-number {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #eff1ef;
+      color: #3f4a43;
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    .phase.current .phase-number {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .phase-title-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .phase-title {
+      margin: 0;
+      font-size: 21px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    .phase-desc {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .tag {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--accent);
+      background: #fff;
+      border: 1px solid #ccebd8;
+      padding: 6px 9px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .task-list {
+      list-style: none;
+      margin: 0;
+      padding: 8px 22px 18px;
+    }
+
+    .task {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 13px 0;
+      border-bottom: 1px solid #f0f1f0;
+    }
+
+    .task:last-child {
+      border-bottom: 0;
+    }
+
+    .task input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+
+    .task label {
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .task strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+
+    .task span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .task.done label {
+      opacity: .55;
+    }
+
+    .task.done strong {
+      text-decoration: line-through;
+    }
+
+    .footer-note {
+      margin-top: 28px;
+      background: var(--accent-soft);
+      border: 1px solid #cfe8d7;
+      border-radius: 16px;
+      padding: 18px 20px;
+      color: #245b3b;
+      font-weight: 700;
+    }
+
+    @media (max-width: 760px) {
+      .container {
+        width: min(100% - 20px, 1100px);
+        padding-top: 28px;
+      }
+
+      header {
+        flex-direction: column;
+      }
+
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      .reset-btn {
+        width: 100%;
+      }
+
+      .phase-header {
+        align-items: flex-start;
+      }
+
+      .tag {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <div>
+        <p class="eyebrow">Brains • Roadmap de construção</p>
+        <h1>Construir → medir → conversar → melhorar → cobrar</h1>
+        <p class="subtitle">
+          Um roadmap simples para acompanhar a evolução do Brains até a validação da versão Plus e dos analytics comerciais.
+        </p>
+      </div>
+      <button class="reset-btn" id="resetProgress">Resetar progresso</button>
+    </header>
+
+    <section class="summary">
+      <article class="summary-card">
+        <div class="summary-label">Fases</div>
+        <div class="summary-value">5</div>
+      </article>
+      <article class="summary-card">
+        <div class="summary-label">Etapas concluídas</div>
+        <div class="summary-value" id="completedCount">0</div>
+      </article>
+      <article class="summary-card">
+        <div class="summary-label">Total de etapas</div>
+        <div class="summary-value" id="totalCount">0</div>
+      </article>
+    </section>
+
+    <section class="progress-wrap">
+      <div class="progress-top">
+        <div class="progress-title">Progresso geral</div>
+        <div class="progress-percent" id="progressPercent">0%</div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </section>
+
+    <section class="phases">
+
+      <article class="phase current">
+        <div class="phase-header">
+          <div class="phase-number">1</div>
+          <div class="phase-title-wrap">
+            <h2 class="phase-title">Analytics v0 + lançamento gratuito</h2>
+            <p class="phase-desc">Instrumentar o produto e lançar gratuitamente para começar a aprender com uso real.</p>
+          </div>
+          <span class="tag">AGORA</span>
+        </div>
+        <ul class="task-list">
+          <li class="task">
+            <input type="checkbox" id="p1t1">
+            <label for="p1t1"><strong>Contas, áreas e baralhos</strong><span>Medir criação e crescimento dessas entidades.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p1t2">
+            <label for="p1t2"><strong>DAU / WAU / MAU</strong><span>Acompanhar usuários ativos diariamente, semanalmente e mensalmente.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p1t3">
+            <label for="p1t3"><strong>Funil principal</strong><span>Landing → Login → Autenticação → Home.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p1t4">
+            <label for="p1t4"><strong>Page usage</strong><span>Page views e usuários únicos em Home, Areas e Settings.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p1t5">
+            <label for="p1t5"><strong>Eventos essenciais de estudo</strong><span>Registrar apenas ações realmente úteis para entender uso do produto.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p1t6">
+            <label for="p1t6"><strong>Admin de usuários</strong><span>E-mail, cadastro, último uso, áreas e baralhos.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p1t7">
+            <label for="p1t7"><strong>Lançar gratuitamente</strong><span>Colocar os primeiros usuários reais dentro do Brains.</span></label>
+          </li>
+        </ul>
+      </article>
+
+      <article class="phase">
+        <div class="phase-header">
+          <div class="phase-number">2</div>
+          <div class="phase-title-wrap">
+            <h2 class="phase-title">Beta com usuários reais</h2>
+            <p class="phase-desc">Observar comportamento real e conversar com quem está usando.</p>
+          </div>
+        </div>
+        <ul class="task-list">
+          <li class="task">
+            <input type="checkbox" id="p2t1">
+            <label for="p2t1"><strong>Atrair os primeiros usuários</strong><span>Convidar estudantes reais para testar o produto.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p2t2">
+            <label for="p2t2"><strong>Observar comportamento</strong><span>Acompanhar como o produto é usado na prática.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p2t3">
+            <label for="p2t3"><strong>Conversar com usuários ativos</strong><span>Entender motivação, valor e contexto de uso.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p2t4">
+            <label for="p2t4"><strong>Identificar atritos</strong><span>Mapear abandono, dúvidas e comportamentos inesperados.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p2t5">
+            <label for="p2t5"><strong>Ajustar onboarding e uso</strong><span>Melhorar os primeiros passos com base em dados e entrevistas.</span></label>
+          </li>
+        </ul>
+      </article>
+
+      <article class="phase">
+        <div class="phase-header">
+          <div class="phase-number">3</div>
+          <div class="phase-title-wrap">
+            <h2 class="phase-title">Validar valor</h2>
+            <p class="phase-desc">Descobrir se o Brains está criando hábito e valor suficiente para justificar uma versão paga.</p>
+          </div>
+        </div>
+        <ul class="task-list">
+          <li class="task">
+            <input type="checkbox" id="p3t1">
+            <label for="p3t1"><strong>Medir retenção e frequência</strong><span>Acompanhar retorno e recorrência de uso.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p3t2">
+            <label for="p3t2"><strong>Revisões e criação de vocabulário</strong><span>Entender se usuários continuam criando e revisando conteúdo.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p3t3">
+            <label for="p3t3"><strong>Identificar sinais de hábito</strong><span>Procurar padrões que diferenciam usuários recorrentes.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p3t4">
+            <label for="p3t4"><strong>Entender o que gera valor</strong><span>Consolidar quais benefícios fazem usuários continuarem.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p3t5">
+            <label for="p3t5"><strong>Priorizar melhorias</strong><span>Focar no que mais impacta retenção e percepção de valor.</span></label>
+          </li>
+        </ul>
+      </article>
+
+      <article class="phase">
+        <div class="phase-header">
+          <div class="phase-number">4</div>
+          <div class="phase-title-wrap">
+            <h2 class="phase-title">Criar Brains Plus</h2>
+            <p class="phase-desc">Transformar o valor validado em uma oferta paga simples e clara.</p>
+          </div>
+        </div>
+        <ul class="task-list">
+          <li class="task">
+            <input type="checkbox" id="p4t1">
+            <label for="p4t1"><strong>Definir Free × Plus</strong><span>Decidir o que continua gratuito e o que passa a ser premium.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p4t2">
+            <label for="p4t2"><strong>Definir benefícios premium</strong><span>Basear a oferta no que usuários realmente valorizam.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p4t3">
+            <label for="p4t3"><strong>Criar página de planos</strong><span>Apresentar o valor do Plus com clareza.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p4t4">
+            <label for="p4t4"><strong>Checkout e assinatura</strong><span>Implementar pagamento recorrente.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p4t5">
+            <label for="p4t5"><strong>Controle de acesso</strong><span>Gerenciar Free / Plus e estado da assinatura.</span></label>
+          </li>
+        </ul>
+      </article>
+
+      <article class="phase">
+        <div class="phase-header">
+          <div class="phase-number">5</div>
+          <div class="phase-title-wrap">
+            <h2 class="phase-title">Analytics comercial</h2>
+            <p class="phase-desc">Acompanhar monetização e entender o que transforma usuários gratuitos em clientes.</p>
+          </div>
+        </div>
+        <ul class="task-list">
+          <li class="task">
+            <input type="checkbox" id="p5t1">
+            <label for="p5t1"><strong>Pricing → Checkout → Paid</strong><span>Medir o funil comercial completo.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p5t2">
+            <label for="p5t2"><strong>Conversão Free → Plus</strong><span>Acompanhar a conversão para plano pago.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p5t3">
+            <label for="p5t3"><strong>Assinantes ativos</strong><span>Monitorar clientes com assinatura ativa.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p5t4">
+            <label for="p5t4"><strong>MRR</strong><span>Acompanhar receita recorrente mensal.</span></label>
+          </li>
+          <li class="task">
+            <input type="checkbox" id="p5t5">
+            <label for="p5t5"><strong>Cancelamentos e falhas</strong><span>Medir churn e problemas de cobrança.</span></label>
+          </li>
+        </ul>
+      </article>
+
+    </section>
+
+    <div class="footer-note">
+      Próximo foco: lançar grátis, aprender com usuários reais e usar esses aprendizados para definir o Brains Plus.
+    </div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "brains-roadmap-progress-v1";
+    const checkboxes = [...document.querySelectorAll('input[type="checkbox"]')];
+    const completedCount = document.getElementById("completedCount");
+    const totalCount = document.getElementById("totalCount");
+    const progressPercent = document.getElementById("progressPercent");
+    const progressFill = document.getElementById("progressFill");
+    const resetButton = document.getElementById("resetProgress");
+
+    function loadProgress() {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = Boolean(saved[checkbox.id]);
+        updateTaskState(checkbox);
+      });
+      updateSummary();
+    }
+
+    function saveProgress() {
+      const state = {};
+      checkboxes.forEach(checkbox => {
+        state[checkbox.id] = checkbox.checked;
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function updateTaskState(checkbox) {
+      checkbox.closest(".task").classList.toggle("done", checkbox.checked);
+    }
+
+    function updateSummary() {
+      const done = checkboxes.filter(item => item.checked).length;
+      const total = checkboxes.length;
+      const percent = total ? Math.round((done / total) * 100) : 0;
+
+      completedCount.textContent = done;
+      totalCount.textContent = total;
+      progressPercent.textContent = percent + "%";
+      progressFill.style.width = percent + "%";
+    }
+
+    checkboxes.forEach(checkbox => {
+      checkbox.addEventListener("change", () => {
+        updateTaskState(checkbox);
+        updateSummary();
+        saveProgress();
+      });
+    });
+
+    resetButton.addEventListener("click", () => {
+      const confirmed = confirm("Deseja realmente resetar todo o progresso do roadmap?");
+      if (!confirmed) return;
+
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+        updateTaskState(checkbox);
+      });
+
+      localStorage.removeItem(STORAGE_KEY);
+      updateSummary();
+    });
+
+    loadProgress();
+  </script>
+</body>
+</html>
