@@ -1,0 +1,61 @@
+-- Transactional integration checks. Test-only accounts/events never persist.
+begin;
+do $$
+declare actor uuid:=gen_random_uuid(); visitor uuid:=gen_random_uuid(); eid uuid:=gen_random_uuid(); result jsonb; baseline bigint; initial_active bigint; second_visitor uuid:=gen_random_uuid();
+begin
+ insert into auth.users(id,email,raw_app_meta_data) values(actor,'admin-analytics-test@example.invalid','{"role":"admin"}');
+ perform set_config('request.jwt.claim.sub',actor::text,true);
+ set local role authenticated;
+ if not public.brains_admin_access() then raise exception 'admin access failed'; end if;
+ result:=public.brains_admin_overview(30);
+ initial_active:=(result->>'dau')::bigint;
+ if jsonb_array_length(result->'series')<>30 then raise exception 'period series failed'; end if;
+ result:=public.brains_admin_users('admin-analytics-test@example.invalid',0,actor);
+ if (result->>'total')::int<>1 or result->'rows'->0->>'email'<>'admin-analytics-test@example.invalid' then raise exception 'user lookup failed'; end if;
+ baseline:=(public.brains_admin_funnel(30)->'steps'->>3)::bigint;
+ perform public.brains_track_event(eid,visitor,'page_view','/');
+ perform public.brains_track_event(eid,visitor,'page_view','/');
+ perform public.brains_track_event(gen_random_uuid(),visitor,'page_view','/login');
+ perform public.brains_track_event(gen_random_uuid(),visitor,'login_completed','/login');
+ perform public.brains_track_event(gen_random_uuid(),visitor,'page_view','/home');
+ result:=public.brains_admin_funnel(30);
+ if (result->'steps'->>3)::bigint<>baseline+1 then raise exception 'ordered funnel failed'; end if;
+ perform public.brains_track_event(gen_random_uuid(),second_visitor,'page_view','/');
+ perform public.brains_track_event(gen_random_uuid(),second_visitor,'page_view','/login');
+ perform public.brains_track_event(gen_random_uuid(),second_visitor,'login_completed','/login');
+ perform public.brains_track_event(gen_random_uuid(),second_visitor,'page_view','/home');
+ if (public.brains_admin_funnel(30)->'steps'->>3)::bigint<>baseline+1 then raise exception 'cross-device deduplication failed'; end if;
+ if (public.brains_admin_overview(30)->>'dau')::bigint<>initial_active then raise exception 'page views incorrectly counted as activity'; end if;
+ insert into public.brains_cloud(user_id,version,document) values(actor,1,jsonb_build_object('schema',1,'areas',jsonb_build_array(jsonb_build_object('id','test-area','deleted',false)),'decks',jsonb_build_array(jsonb_build_object('id','test-deck','deleted',false)),'cards','[]'::jsonb,'reviews','[]'::jsonb,'preferences','{}'::jsonb));
+ if (public.brains_admin_overview(30)->>'dau')::bigint<>initial_active+1 then raise exception 'product creation activity failed'; end if;
+ result:=public.brains_admin_users('',0,actor);
+ if (result->'rows'->0->>'areas')::int<>1 or (result->'rows'->0->>'decks')::int<>1 then raise exception 'library counts failed'; end if;
+ update public.brains_cloud set document=jsonb_set(document,'{preferences}','{"goal":20}') where user_id=actor;
+ begin
+  perform public.brains_track_event(gen_random_uuid(),visitor,'page_view','/home?token=not-allowed');
+  raise exception 'path validation failed';
+ exception when raise_exception then if SQLERRM<>'invalidPath' then raise; end if; end;
+ begin
+  perform public.brains_admin_overview(365);
+  raise exception 'period validation failed';
+ exception when raise_exception then if SQLERRM<>'invalidPeriod' then raise; end if; end;
+ reset role;
+ if (select count(*) from brains_admin.analytics_events where user_id=actor and event_name in ('area_created','deck_created'))<>2 then raise exception 'preference update duplicated creations'; end if;
+ if (select count(*) from brains_admin.analytics_events where id=eid)<>1 then raise exception 'idempotency failed'; end if;
+ update auth.users set raw_app_meta_data='{}',raw_user_meta_data='{"role":"admin"}' where id=actor;
+ set local role authenticated;
+ if public.brains_admin_access() then raise exception 'editable metadata granted access'; end if;
+ begin perform public.brains_admin_overview(30); raise exception 'overview leaked'; exception when insufficient_privilege then null; end;
+ begin perform public.brains_admin_funnel(30); raise exception 'funnel leaked'; exception when insufficient_privilege then null; end;
+ begin perform public.brains_admin_users(); raise exception 'users leaked'; exception when insufficient_privilege then null; end;
+ begin perform * from brains_admin.analytics_events; raise exception 'raw events leaked'; exception when insufficient_privilege then null; end;
+ reset role;
+ perform set_config('request.jwt.claim.sub','',true);
+ set local role anon;
+ begin perform public.brains_admin_overview(30); raise exception 'anonymous overview leaked'; exception when insufficient_privilege then null; end;
+ perform public.brains_track_event(gen_random_uuid(),gen_random_uuid(),'page_view','/');
+ begin perform public.brains_track_event(gen_random_uuid(),gen_random_uuid(),'login_completed','/login'); raise exception 'anonymous auth forged'; exception when raise_exception then if SQLERRM<>'authenticationRequired' then raise; end if; end;
+ reset role;
+end $$;
+rollback;
+select 'Admin authorization, role revocation, editable metadata denial, anonymous denial, funnel ordering, idempotency, period and path validation passed; all fixtures rolled back.' as verification;

@@ -10,6 +10,16 @@ describe('public and authenticated routes',()=>{
   expect(accessRedirect('/login',true,true)).toBeNull();
   expect(accessRedirect('/home',true,true)).toBe('/login?auth=reset');
  });
+ it('returns to Admin only when login was opened for Admin',()=>{
+  expect(accessRedirect('/admin',false,false)).toBe('/login?next=admin');
+  expect(accessRedirect('/login',false,false,'?next=admin')).toBeNull();
+  expect(accessRedirect('/login',true,false,'?next=admin')).toBe('/admin');
+  expect(accessRedirect('/login',true,false)).toBe('/home');
+  expect(accessRedirect('/login',true,true,'?next=admin')).toBeNull();
+ });
+ it.each(['?next=https://evil.example','?next=//evil.example','?next=/admin','?next=/settings'])('rejects arbitrary return destinations: %s',search=>{
+  expect(accessRedirect('/login',true,false,search)).toBe('/home');
+ });
  it('uses existing area IDs without creating or translating references',()=>{
   const id='f0837cd4-1111-4444-9999-ffeabcabcdef';
   expect(productRoute(areaPath(id))).toEqual({page:'area',areaId:id});
