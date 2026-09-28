@@ -8,14 +8,14 @@ Rotas: `/admin`, `/admin/funnel`, `/admin/users`. Sem sessão, vão a `/login?ne
 
 A conta indicada pelo proprietário recebeu o papel admin em 24/09/2026. A alteração preservou as demais chaves de `raw_app_meta_data`, sem alterar senha, sessão ou biblioteca. Outras atribuições devem ser feitas exclusivamente pelo backend/dashboard; nunca por `user_metadata`.
 
-O gráfico de crescimento permite alternar entre Colunas e Linhas para Contas, Áreas e Baralhos. A escolha permanece ao trocar métrica ou período na tela, sem mudar os valores ou a tabela acessível.
+O gráfico de crescimento permite alternar entre Colunas e Linhas para Contas, Áreas e Cards. A escolha permanece ao trocar métrica ou período na tela, sem mudar os valores ou a tabela acessível.
 
 ## Fontes e decisões
 
 - Contas e e-mails: `auth.users`. Não há nome no schema/metadados atuais; e-mail identifica o usuário.
 - Áreas, baralhos, cards e revisões: o documento existente em `brains_cloud`. As tabelas antigas `brains_areas`, `brains_reviews` etc. estão vazias e não são a fonte do app atual.
-- Totais de áreas/baralhos/cards excluem registros na lixeira (`deleted`), mas incluem arquivados.
-- Baralhos são registros internos de compatibilidade; a interface atual organiza estudo por áreas. Essa distinção aparece no Admin.
+- Totais de áreas e cards excluem registros na lixeira (`deleted`), mas incluem arquivados.
+- Baralhos permanecem como registros internos de compatibilidade, mas não aparecem como métrica no Admin.
 - Cards e revisões usam `createdAt` e `at` já existentes. Não há cópia dos conteúdos ou duplicação desses eventos.
 - Áreas/baralhos não tinham data de criação. Um trigger somente observa IDs novos e registra `area_created`/`deck_created`. Bibliotecas antigas não foram alteradas nem receberam datas inventadas. Importações são contadas na primeira observação do registro. O histórico desconhecido é omitido do gráfico.
 - A captura é best-effort: falhas de analytics registram apenas SQLSTATE no log e não impedem salvamentos da biblioteca.

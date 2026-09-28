@@ -1,7 +1,7 @@
 import {cloud} from './cloud';
-export type Metric='accounts'|'areas'|'decks';
-export interface Point{day:string;accounts:number;areas:number;decks:number}
-export interface Overview{accounts:number;areas:number;decks:number;accounts_today:number;areas_today:number;decks_today:number;dau:number;wau:number;mau:number;period_active:number;tracking_since:string;series:Point[]}
+export type Metric='accounts'|'areas'|'cards';
+export interface Point{day:string;accounts:number;areas:number;cards:number}
+export interface Overview{accounts:number;areas:number;cards:number;accounts_today:number;areas_today:number;cards_today:number;dau:number;wau:number;mau:number;period_active:number;tracking_since:string;series:Point[]}
 export interface Funnel{steps:number[];active_users:number;tracking_since:string;pages:{path:string;views:number;users:number;active_percent:number|null}[]}
 export interface AdminUser{id:string;email:string;created_at:string;last_sign_in_at:string|null;last_activity:string|null;areas:number;decks:number;cards:number}
 export interface Users{total:number;rows:AdminUser[];recent:{event_name:string;created_at:string}[]}
