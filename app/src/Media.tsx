@@ -1,3 +1,4 @@
+import {AudioControls} from './AudioControls';
 import {optimizeImage,IMAGE_INPUT_LIMIT} from './image-compression';
 import {detectTextLanguage,detectionLanguages} from './language';
 import {useStore} from './StoreContext';
@@ -7,18 +8,39 @@ import {type Side} from './model';
 import type {T} from './i18n';
 export function useBlobURL(blob?:Blob){const [url,setURL]=useState('');useEffect(()=>{if(!blob){setURL('');return}const value=URL.createObjectURL(blob);setURL(value);return()=>URL.revokeObjectURL(value)},[blob]);return url}
 export function ImageView({blob,alt}:{blob?:Blob;alt:string}){const url=useBlobURL(blob);return url?<img className="card-image" src={url} alt={alt}/>:null}
-export function AudioView({blob,onError}:{blob?:Blob;onError?:()=>void}){const url=useBlobURL(blob);return url?<audio controls src={url} onError={onError}/>:null}
-export function speak(text:string,lang:string,t:T,onError:(text:string)=>void){if(!text.trim()){onError(t('recordTextRequired'));return}const synth=window.speechSynthesis;if(!synth){onError(t('voiceUnavailable'));return}onError('');requestVoices(synth,voices=>{const voice=chooseVoice(voices,lang);if(!voice){onError(t('voiceUnavailable'));return}const utterance=new SpeechSynthesisUtterance(text);utterance.lang=lang;utterance.voice=voice;utterance.rate=.85;utterance.onerror=e=>{if(!['canceled','interrupted'].includes(e.error))onError(t('voiceUnavailable'))};synth.speak(utterance)})}
+export function AudioView({blob,onError,t}:{blob?:Blob;onError?:()=>void;t:T}){
+ const url=useBlobURL(blob),audio=useRef<HTMLAudioElement>(null);
+ const [rate,setRate]=useState(1),[playing,setPlaying]=useState(false),[position,setPosition]=useState(0),[duration,setDuration]=useState(0);
+ useEffect(()=>{setPlaying(false);setPosition(0);setDuration(0)},[url]);
+ useEffect(()=>{if(audio.current)audio.current.playbackRate=rate},[rate,url]);
+ useEffect(()=>{const stop=()=>{audio.current?.pause();setPlaying(false)};window.addEventListener('brains:audio-play',stop);return()=>{window.removeEventListener('brains:audio-play',stop);audio.current?.pause()}},[]);
+ return url?<div className="recorded-audio"><AudioControls rate={rate} onRate={setRate} playing={playing} onPlay={()=>{window.dispatchEvent(new Event('brains:audio-play'));cancelSpeech();const element=audio.current;if(element){element.playbackRate=rate;void element.play().catch(()=>{setPlaying(false);onError?.()})}}} onStop={()=>{if(audio.current){audio.current.pause();audio.current.currentTime=0;setPosition(0)}}} t={t}/><audio ref={audio} src={url} onLoadedMetadata={()=>setDuration(Number.isFinite(audio.current?.duration)?audio.current!.duration:0)} onTimeUpdate={()=>setPosition(audio.current?.currentTime??0)} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onEnded={()=>setPlaying(false)} onError={()=>{setPlaying(false);onError?.()}}/>{duration>0&&<input className="audio-seek" type="range" min={0} max={duration} step={.1} value={position} aria-label={t('audioPosition')} onChange={e=>{const value=Number(e.target.value);if(audio.current)audio.current.currentTime=value;setPosition(value)}}/>}</div>:null
+}
+export function speak(text:string,lang:string,t:T,onError:(text:string)=>void,rate=1,onFinish=()=>{}){
+ const fail=(message:string)=>{onError(message);onFinish()};
+ if(!text.trim()){fail(t('recordTextRequired'));return}
+ const synth=window.speechSynthesis;if(!synth){fail(t('voiceUnavailable'));return}
+ onError('');requestVoices(synth,voices=>{
+  const voice=chooseVoice(voices,lang);if(!voice){fail(t('voiceUnavailable'));return}
+  const utterance=new SpeechSynthesisUtterance(text);utterance.lang=lang;utterance.voice=voice;utterance.rate=rate;
+  utterance.onend=onFinish;
+  utterance.onerror=e=>{if(!['canceled','interrupted'].includes(e.error))onError(t('voiceUnavailable'));onFinish()};
+  synth.speak(utterance)
+ })
+}
 
 export function ReferenceAudio({text,language,t,automatic=false}:{text:string;language:string;t:T;automatic?:boolean}){
- const [manual,setManual]=useState('');const [error,setError]=useState('');
- useEffect(()=>{setManual('');setError('');cancelSpeech()},[text,language,automatic]);
+ const [manual,setManual]=useState('');const [error,setError]=useState('');const [rate,setRate]=useState(1);const [playing,setPlaying]=useState(false);const generation=useRef(0);
+ const stop=()=>{generation.current++;cancelSpeech();setPlaying(false)};
+ useEffect(()=>{const stopped=()=>{generation.current++;setPlaying(false)};window.addEventListener('brains:audio-play',stopped);return()=>{generation.current++;cancelSpeech();window.removeEventListener('brains:audio-play',stopped)}},[]);
+ useEffect(()=>{setManual('');setError('');stop()},[text,language,automatic]);
  const detected=automatic?detectTextLanguage(text,language):{language,reliable:true};const selected=automatic?(manual||detected.language):language;
  const names=new Intl.DisplayNames([document.documentElement.lang||'pt'],{type:'language'});
  const label=(code:string)=>{try{return names.of(code)||code}catch{return code}};
- return <div className="reference-audio"><button type="button" className="listen" onClick={()=>speak(text,selected,t,setError)}>◖)) {t('listen')}</button>
+ function play(speed=rate){window.dispatchEvent(new Event('brains:audio-play'));cancelSpeech();const token=++generation.current;setPlaying(true);speak(text,selected,t,message=>{if(generation.current===token)setError(message)},speed,()=>{if(generation.current===token)setPlaying(false)})}
+ return <div className="reference-audio"><AudioControls rate={rate} onRate={value=>{setRate(value);if(playing)play(value)}} playing={playing} onPlay={()=>play()} onStop={stop} disabled={!text.trim()} t={t}/>
  {text.trim()&&!manual&&!detected.reliable&&<p className="small">{t('uncertainVoice')} {label(selected)}.</p>}
- {automatic&&<details><summary>{t('voiceLanguage')}: {label(selected)}</summary><label>{t('voiceLanguage')}<select value={manual} onChange={e=>{cancelSpeech();setError('');setManual(e.target.value)}}><option value="">{t('automaticVoice')}</option>{Array.from(new Set([language,...detectionLanguages])).sort().map(code=><option key={code} value={code}>{label(code)}</option>)}</select></label></details>}
+ {automatic&&<details><summary>{t('voiceLanguage')}: {label(selected)}</summary><label>{t('voiceLanguage')}<select value={manual} onChange={e=>{stop();setError('');setManual(e.target.value)}}><option value="">{t('automaticVoice')}</option>{Array.from(new Set([language,...detectionLanguages])).sort().map(code=><option key={code} value={code}>{label(code)}</option>)}</select></label></details>}
  {error&&<p role="alert" className="error">{error}</p>}</div>
 }
 export function StoredMedia({blob,path,pending,kind,alt='',t}:{blob?:Blob;path?:string;pending?:boolean;kind:'image'|'audio';alt?:string;t:T}){
@@ -26,7 +48,7 @@ export function StoredMedia({blob,path,pending,kind,alt='',t}:{blob?:Blob;path?:
  useEffect(()=>{let live=true;setError(false);if(!blob&&path)void store.download(path).then(value=>{if(live)setLoaded({path,blob:value})}).catch(()=>{if(live)setError(true)});return()=>{live=false}},[store,blob,path,pending,attempt]);
  const value=blob??(loaded?.path===path?loaded?.blob:undefined);
  if(!blob&&!path)return null;
- return <>{value?(kind==='image'?<ImageView blob={value} alt={alt}/>:<AudioView blob={value} onError={()=>setError(true)}/>):!error?<p className="small">{t('loadingMedia')}</p>:null}{pending&&<p className="small">{t('mediaPending')}</p>}{error&&<p className="small" role="status">{t(pending?'mediaRetryHelp':'mediaError')} <button type="button" className="text-btn" onClick={()=>setAttempt(n=>n+1)}>{t('retry')}</button></p>}</>;
+ return <>{value?(kind==='image'?<ImageView blob={value} alt={alt}/>:<AudioView blob={value} t={t} onError={()=>setError(true)}/>):!error?<p className="small">{t('loadingMedia')}</p>:null}{pending&&<p className="small">{t('mediaPending')}</p>}{error&&<p className="small" role="status">{t(pending?'mediaRetryHelp':'mediaError')} <button type="button" className="text-btn" onClick={()=>setAttempt(n=>n+1)}>{t('retry')}</button></p>}</>;
 }
 export function SideView({side,t,automatic=false}:{side:Side;t:T;automatic?:boolean}){const [error,setError]=useState('');useEffect(()=>{setError('');return()=>cancelSpeech()},[side]);return <><h1>{side.text}</h1><StoredMedia blob={side.image} path={side.imagePath} pending={side.imagePending} kind="image" alt={side.text} t={t}/>{side.mode==='reference'?<ReferenceAudio text={side.text} language={side.language} t={t} automatic={automatic}/>:side.mode!=='none'?<StoredMedia blob={side.audio} path={side.audioPath} pending={side.audioPending} kind="audio" t={t}/>:null}{error&&<p role="alert" className="error">{error}</p>}</>}
 export function SideEditor({side,onChange,t,id,onBusy,mediaOnly=false}:{mediaOnly?:boolean;side:Side;onChange:(side:Side)=>void;t:T;id:string;onBusy:(busy:boolean)=>void}){
