@@ -1,0 +1,10 @@
+import {expect,it} from 'vitest';
+import {dictionary} from 'cmu-pronouncing-dictionary';
+import {pronunciationFor,respell} from './pronunciation';
+it('renders the requested example with stress and syllables',()=>{expect(pronunciationFor('million','en-US',dictionary)).toBe('MIL-yuhn')});
+it('preserves stress when converting phonemes',()=>{expect(respell('AH0 B AW1 T')).toBe('uh-BOWT');expect(respell('K AE1 T')).toBe('KAT')});
+it('accepts capitalization and trailing punctuation',()=>{expect(pronunciationFor('Million!','en-US',dictionary)).toBe('MIL-yuhn')});
+it('does not guess missing or ambiguous words',()=>{expect(pronunciationFor('read','en-US',dictionary)).toBeNull();expect(pronunciationFor('xyzunknown','en-US',dictionary)).toBeNull()});
+it('does not show American respelling for other locales',()=>{for(const locale of ['pt-BR','es-ES','en-GB'])expect(pronunciationFor('million',locale,dictionary)).toBeNull()});
+it('never emits a partial pronunciation for a sentence',()=>{expect(pronunciationFor('million xyzunknown','en-US',dictionary)).toBeNull()});
+it('rejects unsupported symbols and excessive content',()=>{expect(pronunciationFor('1 million','en-US',dictionary)).toBeNull();expect(pronunciationFor('million '.repeat(13),'en-US',dictionary)).toBeNull();expect(respell('UNKNOWN')).toBeNull()});
