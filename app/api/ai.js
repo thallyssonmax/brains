@@ -20,7 +20,7 @@ export function imagePrompt({front,back=''}){
 
 async function generateSentence(input){
  const prompt=sentencePrompt(input);
- const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent',{method:'POST',headers:{'x-goog-api-key':process.env.GEMINI_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:prompt.system}]},contents:[{role:'user',parts:[{text:prompt.user}]}],generationConfig:{maxOutputTokens:100,temperature:0.9}}),signal:AbortSignal.timeout(20000)});
+ const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',{method:'POST',headers:{'x-goog-api-key':process.env.GEMINI_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:prompt.system}]},contents:[{role:'user',parts:[{text:prompt.user}]}],generationConfig:{maxOutputTokens:256,thinkingConfig:{thinkingLevel:'minimal'}}}),signal:AbortSignal.timeout(20000)});
  if(!response.ok){let failure={};try{failure=await response.json()}catch{}console.warn('ai_gemini_rejected',{httpStatus:response.status,providerStatus:failure.error?.status||null,providerCode:failure.error?.code||null});return {error:response.status===429?'providerLimit':'provider'}}
  const result=await response.json();
  const sentence=(result.candidates?.[0]?.content?.parts??[]).map(part=>part.text||'').join(' ').trim().replace(/^['“”]|['“”]$/g,'');

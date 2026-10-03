@@ -20,7 +20,7 @@ describe('AI generation handler',()=>{
   const fetcher=vi.fn(async()=>({ok:true,json:async()=>({candidates:[{content:{parts:[{text:'My friend is awesome.'}]}}]})}));vi.stubGlobal('fetch',fetcher);
   const res=response();await handler({method:'POST',headers:{authorization:'Bearer session',host:'www.heybrains.app'},body:input},res);
   expect(res.statusCode).toBe(200);expect(res.body).toEqual({sentence:'My friend is awesome.',remaining:2});
-  expect(fetcher.mock.calls[0][0]).toContain('gemini-2.5-flash-lite');
+  expect(fetcher.mock.calls[0][0]).toContain('gemini-3.5-flash-lite');
   expect(rpc).toHaveBeenCalledWith('ai_generation_finish',{p_id:input.cardId,p_success:true});
  });
  it('uses Cloudflare for images and returns a JPEG',async()=>{
