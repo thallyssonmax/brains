@@ -21,10 +21,10 @@ export function imagePrompt({front,back=''}){
 async function generateSentence(input){
  const prompt=sentencePrompt(input);
  const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent',{method:'POST',headers:{'x-goog-api-key':process.env.GEMINI_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:prompt.system}]},contents:[{role:'user',parts:[{text:prompt.user}]}],generationConfig:{maxOutputTokens:100,temperature:0.9}}),signal:AbortSignal.timeout(20000)});
- if(!response.ok)return {error:response.status===429?'providerLimit':'provider'};
+ if(!response.ok){let failure={};try{failure=await response.json()}catch{}console.warn('ai_gemini_rejected',{httpStatus:response.status,providerStatus:failure.error?.status||null,providerCode:failure.error?.code||null});return {error:response.status===429?'providerLimit':'provider'}}
  const result=await response.json();
  const sentence=(result.candidates?.[0]?.content?.parts??[]).map(part=>part.text||'').join(' ').trim().replace(/^['“”]|['“”]$/g,'');
- if(!sentence||sentence.length>300)return {error:'provider'};
+ if(!sentence||sentence.length>300){console.warn('ai_gemini_empty',{finishReason:result.candidates?.[0]?.finishReason||null,hasCandidate:!!result.candidates?.length});return {error:'provider'}}
  return {sentence};
 }
 
@@ -59,7 +59,7 @@ export default async function handler(req,res){
   if(claim.error)return json(res,claim.error.message.includes('ai_limit')?429:503,{error:claim.error.message.includes('ai_limit')?'limit':'unavailable'});
   let output;
   try{output=await (input.kind==='image'?generateImage(input):generateSentence(input))}
-  catch{output={error:'provider'}}
+  catch(e){console.warn('ai_provider_exception',{kind:input.kind,name:e instanceof Error?e.name:'unknown'});output={error:'provider'}}
   const finished=await supabase.rpc('ai_generation_finish',{p_id:claim.data.id,p_success:!output.error});
   if(finished.error)return json(res,503,{error:'unavailable'});
   if(output.error)return json(res,output.error==='providerLimit'?429:output.error==='unavailable'?503:502,{error:output.error});
