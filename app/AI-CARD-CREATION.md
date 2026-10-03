@@ -4,7 +4,7 @@ O verso pode receber uma frase simples a partir da frente e do vocabulário da m
 
 Provedores gratuitos escolhidos em outubro de 2026:
 
-- Frase: Gemini 2.5 Flash-Lite (API gratuita com limites variáveis por projeto).
+- Frase: Gemini 3.5 Flash-Lite (API gratuita com limites variáveis por projeto). Projetos novos podem não ter acesso aos modelos 2.5.
 - Imagem: Cloudflare Workers AI, `@cf/black-forest-labs/flux-1-schnell` (cota compartilhada de 10.000 Neurons por dia no plano Free; novas chamadas falham quando a cota acaba, sem cobrança automática).
 
 No Supabase, a migration `20261003132307_ai_generation_limits.sql` apenas cria um log privado de gerações e funções de cota. Ela não altera as tabelas dos usuários. Além dos três usos por ação e card, as cotas iniciais são 15 frases e 5 imagens por usuário por dia, e 300 frases e 100 imagens por dia para todo o app. Chamadas que falham no provedor não consomem a cota do Brains. As cotas dos provedores podem ser menores e mudar.
