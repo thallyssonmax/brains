@@ -7,9 +7,11 @@ export function reviewQueue(db:Library,now=new Date(),areaId?:string):Card[]{
  const today=dayKey(now,db.preferences.timezone);
  const introduced=new Set((db.reviews??[]).filter(e=>e.introduced&&dayKey(new Date(e.at),db.preferences.timezone)===today).map(e=>e.cardId)).size;
  const reviewed=new Set((db.reviews??[]).filter(e=>dayKey(new Date(e.at),db.preferences.timezone)===today).map(e=>e.cardId));
+ const remaining=Math.max(0,db.preferences.goal-reviewed.size);
+ if(!remaining)return [];
  const due=active.filter(c=>!reviewed.has(c.id)&&c.memory).map(card=>({card,due:effectiveDue(db,card)!})).filter(entry=>entry.due<=now).sort((a,b)=>+a.due-+b.due).map(entry=>entry.card);
  const fresh=active.filter(c=>!reviewed.has(c.id)&&!c.memory).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id)).slice(0,Math.max(0,db.preferences.newLimit-introduced));
- return [...due,...fresh];
+ return [...due,...fresh].slice(0,remaining);
 }
 export function applyReview(db:Library,event:ReviewEvent){
  db.reviews??=[];
