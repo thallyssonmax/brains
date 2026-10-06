@@ -13,7 +13,7 @@ Configurar .env.local conforme .env.example, apenas URL e chave pública Supabas
 - Frente: pergunta e áudio. Verso: resposta, áudio próprio e imagem/câmera/galeria.
 - Voz do dispositivo, gravação de até 30 segundos, importação ou sem áudio; até 5 MB por mídia.
 - FSRS 5.4.2 com alvo 90%; confirmação em Próximo card; vencidos antes de novos.
-- Meta global por cards distintos e limite separado de novos.
+- Meta diária global por cards distintos: vencidos primeiro, novos nas vagas restantes. A home mostra revisados / disponíveis hoje; não há limite separado de novos na interface.
 - Arquivo/lixeira/restauração/exclusão definitiva; limpeza segura de mídia não referenciada.
 - Rascunhos e fila de anexos locais por conta; não há sincronização manual.
 - Português, inglês, espanhol; interface responsiva e melhorias de foco/seleção.
