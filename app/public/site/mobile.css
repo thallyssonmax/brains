@@ -55,6 +55,7 @@ a,button{touch-action:manipulation}
   .closing .eyebrow{font-size:12px}
   .closing .button{font-size:16px;min-height:48px}
   footer{flex-wrap:wrap;gap:12px;padding-bottom:max(24px,env(safe-area-inset-bottom))}
+  footer>span{order:3;flex-basis:100%;text-align:center}
   footer>a{min-height:44px;display:flex;align-items:center}
   footer>a:last-child,footer>span{font-size:14px}
 }
