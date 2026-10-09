@@ -1,5 +1,8 @@
 /* Mobile usability: readable type, comfortable targets and flexible content. */
 .hero-copy,.hero-visual,.steps li>div,.level,.science-copy{min-width:0}
+.eyebrow::before{display:none}
+.hero .eyebrow,.closing .eyebrow,.steps li:nth-child(3) p strong,.transition-note strong,.science-copy strong{font-weight:600}
+.illustration img{border-radius:16px}
 img,svg{max-width:100%}
 a,button{touch-action:manipulation}
 @media(max-width:900px){
@@ -96,7 +99,6 @@ a,button{touch-action:manipulation}
 
 /* Visual hierarchy stays distinct without shrinking body copy or touch targets. */
 @media(max-width:700px){
-  .eyebrow::before{display:none}
   .hero-copy{text-align:center}
   .hero .eyebrow{justify-content:center}
   .hero-copy .lead{margin-inline:auto}
