@@ -105,10 +105,16 @@
   .hero-visual #flip { width: auto; min-height: 44px; padding-inline: 22px; }
 }
 
+@media (max-width: 700px) {
+  .hero-visual .demo-card { min-height: 320px; padding-block: 22px 20px; }
+  .hero-visual .card-content { margin-top: 36px; }
+  .hero-visual #flip { margin-top: 20px; }
+}
+
 @media (max-width: 480px) {
   .hero-visual { width: min(100% - 10px, 380px); }
-  .hero-visual .demo-card { min-height: 330px; padding: 23px 18px 22px; }
-  .hero-visual .card-content { margin-top: 45px; }
+  .hero-visual .demo-card { min-height: 300px; padding: 20px 18px 18px; }
+  .hero-visual .card-content { margin-top: 30px; }
   .hero-visual .card-content h2 { font-size: 34px; }
   .hero-visual #flip { font-size: 13px; }
   .hero-visual .visual-bottom strong { font-size: 11px; }
