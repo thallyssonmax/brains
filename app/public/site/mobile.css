@@ -101,6 +101,7 @@ a,button{touch-action:manipulation}
   .hero .eyebrow{justify-content:center}
   .hero-copy .lead{margin-inline:auto}
   .hero .eyebrow,.eyebrow,.closing .eyebrow{font-size:.75rem;font-weight:650;letter-spacing:.65px;margin-bottom:16px;line-height:1.6}
+  .hero .eyebrow,.closing .eyebrow,.steps li:nth-child(3) p strong,.transition-note strong{font-weight:600}
   .hero h1{font-size:2rem;line-height:1.1;letter-spacing:-1.2px;font-weight:700;margin-bottom:24px;text-wrap:balance}
   .hero-copy .lead{font-size:1.0625rem;line-height:1.55;color:#fff;margin-bottom:16px}
   .hero-copy p:not(.lead){font-size:1rem;line-height:1.65;color:#e1eaff}
