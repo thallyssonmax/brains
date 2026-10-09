@@ -81,10 +81,10 @@
 .hero-visual #flip:hover { background: #dfe9ff; }
 
 .hero-visual .visual-bottom {
-  align-self: flex-start;
+  align-self: center;
   margin-top: auto;
   gap: 10px;
-  text-align: left;
+  text-align: center;
 }
 
 .hero-visual .check {
