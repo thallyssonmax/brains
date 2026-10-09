@@ -115,6 +115,7 @@ a,button{touch-action:manipulation}
   .section-heading h2,.science .section-heading h2,#como-usar .section-heading h2,.progressive .section-heading h2,.closing h2{font-size:clamp(1.8rem,7.9vw,2.2rem);line-height:1.16;letter-spacing:-.9px;font-weight:650;margin-bottom:20px;text-wrap:balance}
   .section-heading>p{line-height:1.65;margin-bottom:0}
   .science-copy p{margin-bottom:18px}
+  .science-copy strong{font-weight:600}
   .science-copy .statement{font-weight:600}
   .evidence-number{font-size:2.5rem}
   .evidence-number span{font-size:.8125rem;font-weight:500;letter-spacing:0}
