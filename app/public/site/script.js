@@ -5,5 +5,5 @@ flip.addEventListener('click', () => {
   document.querySelector('#card-side').textContent = showingBack ? 'VERSO DO CARTÃO' : 'FRENTE DO CARTÃO';
   document.querySelector('#card-word').textContent = showingBack ? 'É isso aí.' : 'That’s it.';
   document.querySelector('#card-meaning').textContent = showingBack ? 'Ou “Só isso”, dependendo do contexto.' : 'Você lembra o que significa?';
-  flip.textContent = showingBack ? 'Voltar à expressão ↻' : 'Conferir significado ↻';
+  flip.textContent = showingBack ? 'Voltar à expressão' : 'Conferir significado';
 });
