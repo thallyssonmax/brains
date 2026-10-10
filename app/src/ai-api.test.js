@@ -10,14 +10,23 @@ describe('AI card generation boundary',()=>{
   expect(validateInput({...input,cardId:'invalid'})).toBe(false);
   expect(validateInput({...input,vocabulary:Array(41).fill('word')})).toBe(false);
  });
+ it('requires both front and back content for image generation',()=>{
+  expect(validateInput({...input,kind:'image',back:'A truly awesome day.'})).toBe(true);
+  expect(validateInput({...input,kind:'image',back:'   '})).toBe(false);
+  expect(validateInput({...input,kind:'image'})).toBe(false);
+ });
  it('keeps sentence generation in the selected language and passes familiar words as data',()=>{
   const prompt=sentencePrompt(input);
   expect(prompt.system).toContain('target language');
   expect(JSON.parse(prompt.user)).toEqual({target:'awesome',language:'en-US',familiarVocabulary:['work','friend']});
  });
- it('asks for a textless image and bounds long card content to model limits',()=>{
-  const prompt=imagePrompt({front:'a'.repeat(2000),back:'b'.repeat(2000)});
-  expect(prompt).toContain('Absolutely no text');
-  expect(prompt.length).toBeLessThan(2048);
+ it('builds the pedagogical image prompt with front, back and square text-light guidance',()=>{
+  const prompt=imagePrompt({front:'awesome',back:'The view from the mountain was awesome.'});
+  expect(prompt).toContain('pista visual forte');
+  expect(prompt).toContain('formato 1:1 quadrado');
+  expect(prompt).toContain('Por padrão, não inclua texto');
+  expect(prompt).toContain('CARD_FRONT: awesome');
+  expect(prompt).toContain('CARD_BACK: The view from the mountain was awesome.');
+  expect(imagePrompt({front:'a'.repeat(2000),back:'b'.repeat(2000)}).length).toBeLessThanOrEqual(2048);
  });
 });

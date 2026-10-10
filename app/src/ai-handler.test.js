@@ -25,7 +25,7 @@ describe('AI generation handler',()=>{
  });
  it('uses Cloudflare for images and returns a JPEG',async()=>{
   const fetcher=vi.fn(async()=>({ok:true,json:async()=>({success:true,result:{image:'aGVsbG8='}})}));vi.stubGlobal('fetch',fetcher);
-  const res=response();await handler({method:'POST',headers:{authorization:'Bearer session',host:'www.heybrains.app'},body:{...input,kind:'image'}},res);
+  const res=response();await handler({method:'POST',headers:{authorization:'Bearer session',host:'www.heybrains.app'},body:{...input,kind:'image',back:'The view is awesome.'}},res);
   expect(res.statusCode).toBe(200);expect(res.body).toEqual({image:'aGVsbG8=',mime:'image/jpeg',remaining:2});
   expect(fetcher.mock.calls[0][0]).toContain('flux-1-schnell');
  });
