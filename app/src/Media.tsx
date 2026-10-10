@@ -4,7 +4,7 @@ import {optimizeImage,IMAGE_INPUT_LIMIT} from './image-compression';
 import {detectTextLanguage,detectionLanguages} from './language';
 import {useStore} from './StoreContext';
 import {chooseVoice,cancelSpeech,requestVoices} from './voice';
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {type Side} from './model';
 import type {T} from './i18n';
 export function useBlobURL(blob?:Blob){const [url,setURL]=useState('');useEffect(()=>{if(!blob){setURL('');return}const value=URL.createObjectURL(blob);setURL(value);return()=>URL.revokeObjectURL(value)},[blob]);return url}
@@ -35,7 +35,7 @@ export function ReferenceAudio({text,language,t,automatic=false}:{text:string;la
  const stop=()=>{generation.current++;cancelSpeech();setPlaying(false)};
  useEffect(()=>{const stopped=()=>{generation.current++;setPlaying(false)};window.addEventListener('brains:audio-play',stopped);return()=>{generation.current++;cancelSpeech();window.removeEventListener('brains:audio-play',stopped)}},[]);
  useEffect(()=>{setManual('');setError('');stop()},[text,language,automatic]);
- const detected=automatic?detectTextLanguage(text,language):{language,reliable:true};const selected=automatic?(manual||detected.language):language;
+ const detected=useMemo(()=>automatic?detectTextLanguage(text,language):{language,reliable:true},[automatic,text,language]);const selected=automatic?(manual||detected.language):language;
  const names=new Intl.DisplayNames([document.documentElement.lang||'pt'],{type:'language'});
  const label=(code:string)=>{try{return names.of(code)||code}catch{return code}};
  function play(speed=rate){window.dispatchEvent(new Event('brains:audio-play'));cancelSpeech();const token=++generation.current;setPlaying(true);speak(text,selected,t,message=>{if(generation.current===token)setError(message)},speed,()=>{if(generation.current===token)setPlaying(false)})}

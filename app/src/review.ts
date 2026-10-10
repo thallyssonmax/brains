@@ -2,5 +2,11 @@ import type {Card,Library,Side} from './model';
 export interface ReviewEvent {id:string;cardId:string;at:string;known:boolean;sessionId?:string;retryOf?:string;introduced?:boolean;log?:import('ts-fsrs').ReviewLog}
 export function cardSide(card:Card,back:boolean):Side {const side=back?card.back:card.front;return {...side,image:back?(card.back.image||card.front.image):undefined,imagePath:back?card.back.imagePath:undefined,imagePending:back?card.back.imagePending:undefined,audioText:side.text}}
 export function sharedCard(card:Card):Card {return {...card,front:{...card.front,image:undefined,imagePath:undefined,imagePending:undefined,audioText:''},back:{...card.back,image:card.back.image||card.front.image,audioText:''}}}
-export function dayKey(date:Date,timezone:string){return new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date)}
+// Reuse expensive ICU formatters, without caching account data or dates.
+const dayFormatters=new Map<string,Intl.DateTimeFormat>();
+export function dayKey(date:Date,timezone:string){
+ let formatter=dayFormatters.get(timezone);
+ if(!formatter){formatter=new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'});if(dayFormatters.size>=32)dayFormatters.delete(dayFormatters.keys().next().value!);dayFormatters.set(timezone,formatter)}
+ return formatter.format(date);
+}
 export function dailyProgress(data:Library,now=new Date()){const today=dayKey(now,data.preferences.timezone);const events=(data.reviews??[]).filter(e=>dayKey(new Date(e.at),data.preferences.timezone)===today);return {cards:new Set(events.map(e=>e.cardId)).size,attempts:events.length,correct:events.filter(e=>e.known).length}}

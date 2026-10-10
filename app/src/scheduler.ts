@@ -3,12 +3,15 @@ import type {Library,Card} from './model';
 import {dayKey,type ReviewEvent} from './review';
 export const scheduler=fsrs({request_retention:0.9,enable_fuzz:false,enable_short_term:false});
 export function reviewQueue(db:Library,now=new Date(),areaId?:string):Card[]{
- const active=db.cards.filter(c=>!c.archived&&!c.deleted&&db.decks.some(d=>d.id===c.deckId&&!d.archived&&!d.deleted&&(!areaId||d.areaId===areaId)&&db.areas.some(a=>a.id===d.areaId&&!a.archived&&!a.deleted)));
+ const areas=new Set(db.areas.filter(a=>!a.archived&&!a.deleted).map(a=>a.id));
+ const decks=new Set(db.decks.filter(d=>!d.archived&&!d.deleted&&(!areaId||d.areaId===areaId)&&areas.has(d.areaId)).map(d=>d.id));
+ const active=db.cards.filter(c=>!c.archived&&!c.deleted&&decks.has(c.deckId));
  const today=dayKey(now,db.preferences.timezone);
  const reviewed=new Set((db.reviews??[]).filter(e=>dayKey(new Date(e.at),db.preferences.timezone)===today).map(e=>e.cardId));
  const remaining=Math.max(0,db.preferences.goal-reviewed.size);
  if(!remaining)return [];
- const due=active.filter(c=>!reviewed.has(c.id)&&c.memory).map(card=>({card,due:effectiveDue(db,card)!})).filter(entry=>entry.due<=now).sort((a,b)=>+a.due-+b.due).map(entry=>entry.card);
+ const lastReviews=new Map((db.reviews??[]).map(event=>[event.cardId,event]));
+ const due=active.filter(c=>!reviewed.has(c.id)&&c.memory).map(card=>({card,due:effectiveDueFromReview(db,card,lastReviews.get(card.id))!})).filter(entry=>entry.due<=now).sort((a,b)=>+a.due-+b.due).map(entry=>entry.card);
  const fresh=active.filter(c=>!reviewed.has(c.id)&&!c.memory).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
  return [...due,...fresh].slice(0,remaining);
 }
@@ -39,9 +42,13 @@ export function nextStudyDay(at:Date,timezone:string):Date{
 }
 
 export function effectiveDue(db:Library,card:Card):Date|undefined{
+ const reviews=db.reviews??[];
+ for(let i=reviews.length-1;i>=0;i--)if(reviews[i].cardId===card.id)return effectiveDueFromReview(db,card,reviews[i]);
+ return effectiveDueFromReview(db,card);
+}
+function effectiveDueFromReview(db:Library,card:Card,last?:ReviewEvent):Date|undefined{
  if(!card.memory)return;
  const due=startStudyDay(new Date(card.memory.due),db.preferences.timezone);
- const last=(db.reviews??[]).filter(e=>e.cardId===card.id).at(-1);
  return last?new Date(Math.max(+due,+nextStudyDay(new Date(last.at),db.preferences.timezone))):due;
 }
 
