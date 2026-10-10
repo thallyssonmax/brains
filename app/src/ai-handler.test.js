@@ -24,10 +24,18 @@ describe('AI generation handler',()=>{
   expect(rpc).toHaveBeenCalledWith('ai_generation_finish',{p_id:input.cardId,p_success:true});
  });
  it('uses Cloudflare for images and returns a JPEG',async()=>{
-  const fetcher=vi.fn(async()=>({ok:true,json:async()=>({success:true,result:{image:'aGVsbG8='}})}));vi.stubGlobal('fetch',fetcher);
-  const res=response();await handler({method:'POST',headers:{authorization:'Bearer session',host:'www.heybrains.app'},body:{...input,kind:'image',back:'The view is awesome.'}},res);
+  const fetcher=vi.fn(async url=>String(url).includes('generativelanguage')?{ok:true,json:async()=>({candidates:[{content:{parts:[{text:'A hurried person in pajamas reaches for a clean shirt before leaving home.'}]}}]})}:{ok:true,json:async()=>({success:true,result:{image:'aGVsbG8='}})});vi.stubGlobal('fetch',fetcher);
+  const res=response();await handler({method:'POST',headers:{authorization:'Bearer session',host:'www.heybrains.app'},body:{...input,kind:'image',front:'need',back:'I need to put on my shirt.'}},res);
   expect(res.statusCode).toBe(200);expect(res.body).toEqual({image:'aGVsbG8=',mime:'image/jpeg',remaining:2});
-  expect(fetcher.mock.calls[0][0]).toContain('flux-1-schnell');
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  expect(fetcher.mock.calls[0][0]).toContain('gemini-3.5-flash-lite');
+  const planningBody=JSON.parse(fetcher.mock.calls[0][1].body);
+  expect(planningBody.contents[0].parts[0].text).toContain('CARD_FRONT: "need"');
+  expect(planningBody.contents[0].parts[0].text).toContain('CARD_BACK: "I need to put on my shirt."');
+  expect(fetcher.mock.calls[1][0]).toContain('flux-1-schnell');
+  const fluxBody=JSON.parse(fetcher.mock.calls[1][1].body);
+  expect(fluxBody.prompt).toContain('A hurried person in pajamas');
+  expect(fluxBody.prompt.toLowerCase()).not.toContain('flashcard');
  });
  it('refunds a provider failure and preserves a retry',async()=>{
   vi.stubGlobal('fetch',vi.fn(async()=>({ok:false,status:429})));

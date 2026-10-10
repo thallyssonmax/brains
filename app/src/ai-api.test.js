@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {validateInput,sentencePrompt,imagePrompt} from '../api/ai.js';
+import {validateInput,sentencePrompt,imagePlanningPrompt,imagePrompt} from '../api/ai.js';
 
 const input={cardId:'5820477a-5b9a-44eb-aeab-5713b69d9b8e',kind:'sentence',front:'awesome',language:'en-US',vocabulary:['work','friend']};
 
@@ -20,13 +20,16 @@ describe('AI card generation boundary',()=>{
   expect(prompt.system).toContain('target language');
   expect(JSON.parse(prompt.user)).toEqual({target:'awesome',language:'en-US',familiarVocabulary:['work','friend']});
  });
- it('builds the pedagogical image prompt with front, back and square text-light guidance',()=>{
-  const prompt=imagePrompt({front:'awesome',back:'The view from the mountain was awesome.'});
-  expect(prompt).toContain('pista visual forte');
-  expect(prompt).toContain('formato 1:1 quadrado');
-  expect(prompt).toContain('Por padrão, não inclua texto');
-  expect(prompt).toContain('CARD_FRONT: awesome');
-  expect(prompt).toContain('CARD_BACK: The view from the mountain was awesome.');
-  expect(imagePrompt({front:'a'.repeat(2000),back:'b'.repeat(2000)}).length).toBeLessThanOrEqual(2048);
+ it('separates semantic planning from the scene-only image prompt',()=>{
+  const planning=imagePlanningPrompt({front:'need',back:'I need to put on my shirt.'});
+  expect(planning.system).toContain('pista visual forte');
+  expect(planning.system).toContain('Não mencione o processo de aprendizagem');
+  expect(planning.user).toContain('CARD_FRONT: "need"');
+  expect(planning.user).toContain('CARD_BACK: "I need to put on my shirt."');
+  const prompt=imagePrompt('A hurried person in pajamas reaches for a clean shirt before leaving home.');
+  expect(prompt).toContain('Full-bleed square 1:1 editorial illustration');
+  expect(prompt).toContain('scene fills the entire canvas edge to edge');
+  expect(prompt.toLowerCase()).not.toContain('flashcard');
+  expect(imagePrompt('a'.repeat(2000)).length).toBeLessThanOrEqual(2048);
  });
 });

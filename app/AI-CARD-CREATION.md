@@ -1,4 +1,4 @@
-# Criação de cards com IA (preparada, desativada)
+# Criação de cards com IA
 
 O verso pode receber uma frase simples a partir da frente e do vocabulário da mesma área. Uma segunda ação gera uma ilustração sem texto com base na frente e, quando houver, na frase. Cada card permite três gerações de frase e três de imagem. O usuário pode editar o texto e remover uma imagem gerada antes de salvar. A imagem passa pela otimização já existente e é salva pelo fluxo de mídia atual. Nenhum estado de revisão, histórico ou card existente é migrado.
 
@@ -6,6 +6,8 @@ Provedores gratuitos escolhidos em outubro de 2026:
 
 - Frase: Gemini 3.5 Flash-Lite (API gratuita com limites variáveis por projeto). Projetos novos podem não ter acesso aos modelos 2.5.
 - Imagem: Cloudflare Workers AI, `@cf/black-forest-labs/flux-1-schnell` (cota compartilhada de 10.000 Neurons por dia no plano Free; novas chamadas falham quando a cota acaba, sem cobrança automática).
+
+Para imagens, o Gemini primeiro interpreta o significado da frente no contexto do verso e produz uma descrição visual curta em inglês. O FLUX recebe apenas essa descrição da cena e as regras de composição 1:1, sem referências a cards, flashcards ou interface. Isso evita que o modelo desenhe o próprio material de estudo no lugar da situação didática.
 
 No Supabase, a migration `20261003132307_ai_generation_limits.sql` apenas cria um log privado de gerações e funções de cota. Ela não altera as tabelas dos usuários. Além dos três usos por ação e card, as cotas iniciais são 15 frases e 5 imagens por usuário por dia, e 300 frases e 100 imagens por dia para todo o app. Chamadas que falham no provedor não consomem a cota do Brains. As cotas dos provedores podem ser menores e mudar.
 
