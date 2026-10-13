@@ -1,0 +1,131 @@
+.home-screen {
+  padding-block: 56px 32px;
+  background: #fff;
+}
+
+.home-screen-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.home-screen-copy {
+  min-width: 0;
+}
+
+.home-screen .section-heading h2 {
+  max-width: 440px;
+}
+
+.home-screen .section-heading h2 span {
+  color: var(--blue);
+}
+
+.home-screen .section-heading p {
+  max-width: 470px;
+  margin-bottom: 0;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.home-screen-options {
+  display: grid;
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.home-screen-option {
+  padding-left: 16px;
+  border-left: 3px solid var(--blue);
+}
+
+.home-screen-option h3 {
+  margin: 0 0 5px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.home-screen-option p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.home-screen-option strong {
+  font-weight: 600;
+}
+
+.home-screen-visual {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #e6ebf4;
+  border-radius: 22px;
+  background: #f7f9fd;
+  box-shadow: 0 16px 40px #17233b06;
+}
+
+.home-screen-visual img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+@media (max-width: 1100px) {
+  .home-screen-grid {
+    gap: 45px;
+  }
+}
+
+@media (max-width: 900px) {
+  .home-screen {
+    padding-block: 48px 28px;
+  }
+
+  .home-screen-grid {
+    display: block;
+  }
+
+  .home-screen .section-heading h2,
+  .home-screen .section-heading p {
+    max-width: 620px;
+  }
+
+  .home-screen-option p,
+  .home-screen .section-heading p {
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  .home-screen-visual {
+    max-width: 580px;
+    margin: 28px auto 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .home-screen {
+    padding-block: 40px 20px;
+  }
+
+  .home-screen .section-heading h2 {
+    margin-bottom: 20px;
+  }
+
+  .home-screen-options {
+    gap: 20px;
+    margin-top: 24px;
+  }
+
+  .home-screen-option h3 {
+    font-size: 1rem;
+  }
+
+  .home-screen-visual {
+    margin-top: 28px;
+  }
+}
