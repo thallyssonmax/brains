@@ -1,0 +1,44 @@
+openapi: 3.1.0
+info:
+  title: Brains image transfer probe
+  version: 0.1.0
+  description: Test-only endpoint. Verifies an image reference without creating a card or storing media.
+servers:
+  - url: https://www.heybrains.app
+paths:
+  /api/chatgpt-image-probe:
+    post:
+      operationId: verifyChatGPTImageTransfer
+      summary: Verify transfer of one image generated in this conversation
+      description: Send exactly one image generated or uploaded in this conversation. The endpoint verifies its bytes and returns a digest. It creates no card.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [openaiFileIdRefs]
+              properties:
+                openaiFileIdRefs:
+                  type: array
+                  description: Exactly one image file from the current ChatGPT conversation. The runtime supplies file reference objects despite the string schema.
+                  minItems: 1
+                  maxItems: 1
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Image bytes verified; nothing stored.
+        '400':
+          description: Missing or invalid file reference.
+        '401':
+          description: Brains authentication required.
+        '422':
+          description: Image expired, too large, unavailable or unsupported.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
