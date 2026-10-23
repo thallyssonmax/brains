@@ -1,6 +1,6 @@
 # Brains + ChatGPT — especificação e plano de implementação
 
-Data: 23/10/2026 · Versão: 1.3 · Status: transferência por GPT Actions e referência por MCP comprovadas; importação com revisão humana implementada no código, aguardando validação completa em produção.
+Data: 23/10/2026 · Versão: 1.4 · Status: plugin MCP privado conectado; transferência de frente, verso e imagem gerada até a revisão autenticada no Brains validada em produção. O salvamento de um card com imagem ainda não foi exercitado neste teste para evitar alterar a biblioteca real.
 
 > **Implementação atual:** o plugin MCP prepara um link temporário com frente, verso e referência à imagem gerada no ChatGPT. O usuário abre o link autenticado no Brains, escolhe a área, revisa/edita e confirma. A imagem é baixada por um proxy autenticado, otimizada no navegador e salva pelo `CloudStore` existente. O plugin não recebe token do Brains, não lista bibliotecas e não grava cards. A referência de imagem fica no fragmento da URL e passa para `sessionStorage` ao abrir; expira em 30 minutos. Não houve migração nem mudança de schema. As seções de OAuth/propostas/commit abaixo documentam uma possível evolução futura, **não** o fluxo implementado.
 
@@ -10,8 +10,9 @@ Data: 23/10/2026 · Versão: 1.3 · Status: transferência por GPT Actions e ref
 
 - GPT privado de teste: [Brains — Criador de cards](https://chatgpt.com/g/g-6adb782c66c081918608074b4cd81eb1-brains-criador-de-cards).
 - Uma imagem gerada pelo ChatGPT chegou ao endpoint isolado `app/api/chatgpt-image-probe.js`; os bytes eram PNG, 2.829.879 bytes, com SHA-256 `dfdbaa2f35843e291fb0cd358ad9a0f5aab939cceb541bfd203c462202662d55`.
-- O teste não leu contas, banco ou Storage e não salvou card. A imagem exibida na conversa não foi comparada visualmente aos bytes recebidos; o hash comprova os bytes recebidos, não a identidade visual. A transferência por MCP ainda precisa de teste próprio.
+- A prova por Actions não leu contas, banco ou Storage e não salvou card. A imagem exibida na conversa não foi comparada visualmente aos bytes recebidos; o hash comprova os bytes recebidos, não a identidade visual.
 - A documentação atual de [file inputs para plugins](https://developers.openai.com/plugins/reference) descreve `_meta["openai/fileParams"]`, com `download_url` e `file_id`. Um teste real no ChatGPT Web em 23/10/2026 fez `check_image_reference` receber uma imagem PNG gerada na conversa, vinda de `sdmntprbrazilsouth.oaiusercontent.com`. O teste não fez download nem comparou seus bytes.
+- O plugin privado **Brains — Criar flashcard** chamou `prepare_flashcard` em produção com “apple”, “I eat a red apple every morning.” e a imagem de uma maçã gerada naquela conversa. O link abriu `/import/chatgpt` em uma sessão autenticada; os textos e a imagem correta apareceram na prévia. O botão de salvar ficou desabilitado até escolher uma área. Nenhum card foi salvo. A referência assinada da imagem fica no fragmento do link e expira; não compartilhar esse link fora da conversa.
 - O banco atual autoriza tokens Supabase autenticados pelo `auth.uid()`, sem restringir o `client_id` OAuth. **Não conectar OAuth do Supabase ao plugin antes de isolar suas permissões** no banco, Storage e RPCs; caso contrário, o token poderá alcançar muito mais que as operações de criação previstas.
 
 ## 1. Objetivo e experiência

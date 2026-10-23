@@ -1,8 +1,20 @@
 # Brains + ChatGPT — passo a passo de entrega
 
-Data: 23/10/2026. Complementa [a especificação](Brains-ChatGPT-especificacao.md). A prova por GPT Actions recebeu os bytes de uma imagem. O plugin MCP no ChatGPT Web recebeu a referência de outra imagem gerada na conversa. Nenhum teste alterou cards.
+Data: 23/10/2026. Complementa [a especificação](Brains-ChatGPT-especificacao.md). O plugin privado **Brains — Criar flashcard** está conectado ao ChatGPT e a importação com revisão está publicada no Brains. Um teste real levou texto e imagem gerada na conversa até a prévia autenticada em produção; nenhum card de teste foi salvo.
 
-**Caminho implementado:** o MCP `app/api/brains-mcp-import.js` prepara um link de revisão. `app/src/ChatGPTImport.tsx` exige login, área e confirmação. `app/api/chatgpt-import-image.js` baixa a imagem apenas para um usuário autenticado; o navegador a otimiza e a salva por meio do mecanismo de card atual. Esse desenho evita entregar ao plugin um token Supabase com acesso amplo à biblioteca. Não requer nova tabela, chave de serviço nem migração. Ainda é preciso publicar, conectar o plugin definitivo e testar o percurso completo com uma conta de teste.
+**Caminho implementado:** o MCP `app/api/brains-mcp-import.js` prepara um link de revisão. `app/src/ChatGPTImport.tsx` exige login, área e confirmação. `app/api/chatgpt-import-image.js` baixa a imagem apenas para um usuário autenticado; o navegador a otimiza e a salva por meio do mecanismo de card atual. Esse desenho evita entregar ao plugin um token Supabase com acesso amplo à biblioteca. Não requer nova tabela, chave de serviço nem migração. O upload e o salvamento de um card importado com imagem ainda não foram exercitados em uma conta de teste isolada.
+
+## Como usar agora
+
+1. No ChatGPT, invoque **Brains — Criar flashcard** e peça um card específico. Exemplo: “Crie um card para *apple*, com uma frase simples e uma imagem contextual, sem texto. Prepare para revisão no Brains.” A imagem é gerada pelo ChatGPT, sujeita aos limites da conta.
+2. Abra o link **Revisar flashcard no Brains** em até 30 minutos. Ele contém uma referência temporária da imagem; não o compartilhe. Entre na sua conta Brains, se necessário.
+3. Escolha uma área ativa, confira e edite a frente, o verso e a imagem. O app verifica duplicatas. Só clique em **Confirmar e salvar card** se o conteúdo estiver correto. Se a imagem falhar, o app exige escolha explícita para salvar sem ela.
+
+O plugin não vê suas áreas, cards ou histórico e não salva nada sozinho. O teste de produção confirmou a prévia com imagem; falta validar a persistência completa em uma conta de teste, incluindo upload e reabertura do card em outro dispositivo.
+
+## Histórico da prova e evolução futura
+
+As etapas seguintes registram a prova inicial com GPT Actions e um plano opcional para OAuth, propostas e salvamento direto. **Não são necessárias para usar o fluxo com revisão no app que está publicado agora.**
 
 **Mudança de canal:** GPTs personalizados serão [descontinuados em 11/12/2026](https://help.openai.com/en/articles/20001519-custom-gpt-retirement-and-migration-faq), e Actions não migram. O restante da implementação deve usar um plugin MCP. O endpoint `app/api/brains-mcp.js` e o pacote `plugins/brains-image-probe/` são uma prova isolada desse canal, protegida pela mesma chave de teste e sem acesso aos dados dos usuários. Primeiro validar seu transporte de arquivo; depois projetar OAuth com permissões estreitas e os endpoints de propostas/commit.
 
@@ -19,7 +31,7 @@ Responsáveis: desenvolvimento e dono do GPT.
 7. Testar regeneração, referência expirada, reenvio, ausência de imagem e confirmação nativa da ação.
 8. Registrar evidências sem URLs assinadas ou credenciais.
 
-Saída obtida: transporte por Actions funcionou para a imagem testada. O novo canal MCP ainda precisa de validação real. Não concluir que o plugin salva cards apenas por este teste.
+Saída obtida: transporte por Actions funcionou para a imagem testada. Depois, o plugin MCP também transferiu a referência da imagem e abriu a prévia com a imagem correta em produção. O plugin não salva cards.
 
 ## Etapa 2 — Validar o plugin MCP e conectar a conta
 
@@ -82,4 +94,4 @@ Saída: um card aprovado produz exatamente um card novo com imagem permanente. D
 | Persistência | Biblioteca/versionamento existentes, estruturas auxiliares só se necessárias |
 | Custo | Sem geração por API do Brains nesse fluxo; acompanhar uso de infraestrutura |
 
-Próxima ação recomendada: comprovar o envio de imagem pelo plugin MCP, sem conectar contas. A seguir, resolver a autorização restrita antes de desenvolver operações sobre bibliotecas reais.
+Próxima validação recomendada: em uma conta de teste isolada, confirmar o salvamento de um card importado com imagem e sua leitura em outro dispositivo. A evolução para OAuth e salvamento direto pelo plugin só deve ocorrer depois de restringir as permissões dos tokens no banco e Storage.
