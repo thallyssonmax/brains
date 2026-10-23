@@ -11,7 +11,8 @@ describe('ChatGPT image transfer probe',()=>{
  });
  it('accepts only one file from the documented host',()=>{
   expect(fileReference({openaiFileIdRefs:[ref]})?.id).toBe(ref.id);
-  for(const link of ['http://files.oaiusercontent.com/x','https://evil.test/x','https://files.oaiusercontent.com.evil.test/x','https://localhost/x'])expect(fileReference({openaiFileIdRefs:[{...ref,download_link:link}]})).toBeNull();
+  expect(fileReference({openaiFileIdRefs:[{id:'file_00000000e77c820e9e1468a63b8f64cd',download_link:'https://sdmntprbrazilsouth.oaiusercontent.com/files/example/raw?se=abc'}]})?.id).toBe('file_00000000e77c820e9e1468a63b8f64cd');
+  for(const link of ['http://files.oaiusercontent.com/x','https://evil.test/x','https://files.oaiusercontent.com.evil.test/x','https://sdmntprbrazilsouth.oaiusercontent.com.evil.test/x','https://localhost/x'])expect(fileReference({openaiFileIdRefs:[{...ref,download_link:link}]})).toBeNull();
   expect(fileReference({openaiFileIdRefs:[ref,ref]})).toBeNull();
  });
  it('inspects bytes without storing user media or returning a temporary URL',async()=>{

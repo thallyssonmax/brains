@@ -38,6 +38,7 @@ paths:
         '422':
           description: Image expired, too large, unavailable or unsupported.
 components:
+  schemas: {}
   securitySchemes:
     bearerAuth:
       type: http
