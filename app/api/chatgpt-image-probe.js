@@ -11,15 +11,27 @@ export function validProbeKey(header,secret){
  return timingSafeEqual(supplied,expected);
 }
 
+function trustedImageUrl(value){
+ let url;
+ try{url=new URL(value)}catch{return null}
+ if(url.protocol!=='https:'||url.username||url.password||url.port||!/^(?:files|sdmntpr[a-z0-9-]{1,40})\.oaiusercontent\.com$/.test(url.hostname))return null;
+ return url;
+}
+
 export function fileReference(body){
  const files=body?.openaiFileIdRefs;
  if(!Array.isArray(files)||files.length!==1)return null;
  const file=files[0];
  if(!file||typeof file!=='object'||typeof file.id!=='string'||!/^file[-_][A-Za-z0-9_-]{8,120}$/.test(file.id)||typeof file.download_link!=='string')return null;
- let url;
- try{url=new URL(file.download_link)}catch{return null}
- if(url.protocol!=='https:'||url.username||url.password||url.port||!/^(?:files|sdmntpr[a-z0-9-]{1,40})\.oaiusercontent\.com$/.test(url.hostname))return null;
+ const url=trustedImageUrl(file.download_link);
+ if(!url)return null;
  return {id:file.id,url};
+}
+
+export function mcpFileReference(file){
+ if(!file||typeof file!=='object'||typeof file.file_id!=='string'||!/^file[-_][A-Za-z0-9_-]{8,120}$/.test(file.file_id)||typeof file.download_url!=='string')return null;
+ const url=trustedImageUrl(file.download_url);
+ return url?{id:file.file_id,url}:null;
 }
 
 export function imageMime(bytes){

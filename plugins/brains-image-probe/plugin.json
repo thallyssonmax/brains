@@ -1,0 +1,18 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "brains-image-probe",
+  "version": "0.1.0",
+  "description": "Private technical test of image transfer from ChatGPT to Brains. Cannot save cards or access user accounts.",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Brains — teste de imagem",
+        "shortDescription": "Verifica a transferência de uma imagem sem salvar cards",
+        "developerName": "Brains",
+        "category": "Productivity",
+        "capabilities": ["Read"],
+        "websiteURL": "https://www.heybrains.app"
+      }
+    }
+  }
+}

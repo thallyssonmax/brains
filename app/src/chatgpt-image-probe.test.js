@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {fileReference,inspectImage,validProbeKey} from '../api/chatgpt-image-probe.js';
+import {fileReference,inspectImage,mcpFileReference,validProbeKey} from '../api/chatgpt-image-probe.js';
 const ref={id:'file-12345678',download_link:'https://files.oaiusercontent.com/file-12345678?se=abc'};
 describe('ChatGPT image transfer probe',()=>{
  it('accepts only the isolated probe key',()=>{
@@ -25,5 +25,9 @@ describe('ChatGPT image transfer probe',()=>{
   const reference=fileReference({openaiFileIdRefs:[ref]});
   await expect(inspectImage(reference,async()=>new Response('hello'))).rejects.toThrow('type');
   await expect(inspectImage(reference,async()=>new Response('x',{headers:{'content-length':String(6*1024*1024)}}))).rejects.toThrow('size');
+ });
+ it('validates plugin file inputs with the same outbound URL rules',()=>{
+  expect(mcpFileReference({file_id:'file_00000000e77c820e9e1468a63b8f64cd',download_url:'https://sdmntprbrazilsouth.oaiusercontent.com/files/example/raw?se=abc'})?.id).toBe('file_00000000e77c820e9e1468a63b8f64cd');
+  expect(mcpFileReference({file_id:'file_00000000e77c820e9e1468a63b8f64cd',download_url:'http://localhost/image'})).toBeNull();
  });
 });
