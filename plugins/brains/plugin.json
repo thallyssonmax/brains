@@ -1,0 +1,32 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "brains-flashcards",
+  "version": "1.0.0",
+  "description": "Prepare flashcards with a ChatGPT-generated image for review in Brains. The user chooses an area and confirms before anything is saved.",
+  "author": {
+    "name": "Brains",
+    "url": "https://www.heybrains.app"
+  },
+  "homepage": "https://www.heybrains.app",
+  "repository": "https://github.com/thallyssonmax/brains",
+  "keywords": ["flashcards", "spaced-repetition", "languages"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Brains — Criar flashcard",
+        "shortDescription": "Da conversa para a sua memória",
+        "longDescription": "Prepare um flashcard com frase e imagem gerada no ChatGPT. Abra a prévia no Brains, escolha uma área e revise o conteúdo antes de salvar. O plugin não acessa sua biblioteca nem salva cards sozinho.",
+        "developerName": "Brains",
+        "category": "Education",
+        "capabilities": ["Preparar flashcards", "Transferir imagem gerada"],
+        "websiteURL": "https://www.heybrains.app",
+        "defaultPrompt": [
+          "Prepare um flashcard de inglês para uma palavra que acabei de aprender, com frase simples e imagem sem texto."
+        ],
+        "brandColor": "#2458E6",
+        "composerIcon": "./assets/brains-logo.svg",
+        "logo": "./assets/brains-logo.svg"
+      }
+    }
+  }
+}
