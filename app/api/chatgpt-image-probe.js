@@ -41,7 +41,7 @@ export function imageMime(bytes){
  return null;
 }
 
-export async function inspectImage(reference,download=fetch){
+export async function fetchImage(reference,download=fetch){
  const response=await download(reference.url,{redirect:'error',signal:AbortSignal.timeout(8000),headers:{Accept:'image/png,image/jpeg,image/webp'}});
  if(!response.ok||!response.body)throw Error('download');
  const length=Number(response.headers.get('content-length'));
@@ -51,7 +51,11 @@ export async function inspectImage(reference,download=fetch){
  const bytes=Buffer.concat(chunks);
  const mime=imageMime(bytes);
  if(!mime)throw Error('type');
- return {mime,size,sha256:createHash('sha256').update(bytes).digest('hex')};
+ return {mime,size,sha256:createHash('sha256').update(bytes).digest('hex'),bytes};
+}
+export async function inspectImage(reference,download=fetch){
+ const {mime,size,sha256}=await fetchImage(reference,download);
+ return {mime,size,sha256};
 }
 
 export default async function handler(req,res){

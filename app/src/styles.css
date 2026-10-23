@@ -47,3 +47,9 @@ nav a.nav { text-decoration: none; }
 .pronunciation-hint{width:100%;text-align:center;font-size:16px;line-height:1.5;letter-spacing:.025em;color:#526078;margin:0 0 12px;overflow-wrap:anywhere}
 
 .ai-actions{margin:16px 0 8px}.ai-actions button{display:flex;flex-direction:column;gap:2px;min-height:56px}.ai-actions small{font-size:12px;font-weight:500;color:#526078}
+.chatgpt-import {max-width:760px;margin-inline:auto;padding-bottom:3rem}
+.chatgpt-import .panel {margin-block:1rem}
+.chatgpt-import textarea {width:100%;min-height:7rem;resize:vertical}
+.chatgpt-import .import-image {display:block;width:min(100%,320px);aspect-ratio:1;object-fit:contain;margin:1rem auto;border-radius:1rem}
+.chatgpt-import .import-checkbox {display:flex;align-items:center;gap:.6rem;margin:1rem 0}
+.chatgpt-import .import-checkbox input {width:auto}

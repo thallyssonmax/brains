@@ -1,6 +1,8 @@
 # Brains + ChatGPT — passo a passo de entrega
 
-Data: 23/10/2026. Complementa [a especificação](Brains-ChatGPT-especificacao.md). A Etapa 1 com GPT Actions foi concluída: `app/api/chatgpt-image-probe.js` recebeu uma imagem real gerada no ChatGPT e devolveu tipo, tamanho e hash sem acessar conta, banco ou Storage. A integração individual e a criação de cards continuam pendentes.
+Data: 23/10/2026. Complementa [a especificação](Brains-ChatGPT-especificacao.md). A prova por GPT Actions recebeu os bytes de uma imagem. O plugin MCP no ChatGPT Web recebeu a referência de outra imagem gerada na conversa. Nenhum teste alterou cards.
+
+**Caminho implementado:** o MCP `app/api/brains-mcp-import.js` prepara um link de revisão. `app/src/ChatGPTImport.tsx` exige login, área e confirmação. `app/api/chatgpt-import-image.js` baixa a imagem apenas para um usuário autenticado; o navegador a otimiza e a salva por meio do mecanismo de card atual. Esse desenho evita entregar ao plugin um token Supabase com acesso amplo à biblioteca. Não requer nova tabela, chave de serviço nem migração. Ainda é preciso publicar, conectar o plugin definitivo e testar o percurso completo com uma conta de teste.
 
 **Mudança de canal:** GPTs personalizados serão [descontinuados em 11/12/2026](https://help.openai.com/en/articles/20001519-custom-gpt-retirement-and-migration-faq), e Actions não migram. O restante da implementação deve usar um plugin MCP. O endpoint `app/api/brains-mcp.js` e o pacote `plugins/brains-image-probe/` são uma prova isolada desse canal, protegida pela mesma chave de teste e sem acesso aos dados dos usuários. Primeiro validar seu transporte de arquivo; depois projetar OAuth com permissões estreitas e os endpoints de propostas/commit.
 
