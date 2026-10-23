@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Brains image transfer probe
   version: 0.1.0
-  description: Test-only endpoint. Verifies an image reference without creating a card or storing media.
+  description: Private test-only endpoint. Verifies an image reference without accessing a Brains account, creating a card or storing media.
 servers:
   - url: https://www.heybrains.app
 paths:
@@ -34,7 +34,7 @@ paths:
         '400':
           description: Missing or invalid file reference.
         '401':
-          description: Brains authentication required.
+          description: Private probe key required.
         '422':
           description: Image expired, too large, unavailable or unsupported.
 components:

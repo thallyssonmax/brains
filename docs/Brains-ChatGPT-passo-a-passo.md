@@ -1,6 +1,6 @@
 # Brains + ChatGPT — passo a passo de entrega
 
-Data: 23/10/2026. Complementa [a especificação](Brains-ChatGPT-especificacao.md). A base técnica da Etapa 1 está em `app/api/chatgpt-image-probe.js`, com schema em `app/chatgpt-image-probe.openapi.yaml`. O teste real dentro de um GPT e OAuth ainda estão pendentes.
+Data: 23/10/2026. Complementa [a especificação](Brains-ChatGPT-especificacao.md). A Etapa 1 usa `app/api/chatgpt-image-probe.js`, com schema em `app/chatgpt-image-probe.openapi.yaml`. O endpoint aceita apenas a chave privada `BRAINS_CHATGPT_PROBE_KEY`, verifica um arquivo e devolve tipo, tamanho e hash. Não acessa a conta, o banco ou o Storage. O teste real dentro de um GPT e a conexão individual ainda estão pendentes.
 
 ## Etapa 1 — Provar a transferência da imagem
 
@@ -8,7 +8,7 @@ Responsáveis: desenvolvimento e dono do GPT.
 
 1. Verificar se a conta permite criar GPT com Actions e geração de imagens na mesma configuração.
 2. Criar GPT privado de teste, sem acesso aos dados reais do Brains.
-3. Criar endpoint temporário autenticado de recebimento, sem gravar cards de produção.
+3. Criar endpoint temporário com chave exclusiva de teste, sem acesso às contas e sem gravar cards de produção.
 4. Configurar OpenAPI seguindo `openaiFileIdRefs` da documentação oficial, respeitando a diferença entre schema e payload recebido.
 5. Gerar uma imagem educativa no próprio GPT e pedir seu envio.
 6. Confirmar que os bytes recebidos correspondem à imagem exibida, e não a thumbnail, imagem diferente ou URL inventada.
@@ -19,7 +19,7 @@ Saída: decisão de prosseguir com Actions. Se falhar, comparar Apps SDK/MCP ou 
 
 ## Etapa 2 — Conectar a conta
 
-1. Verificar suporte OAuth do projeto e compatibilidade com Actions.
+1. Verificar suporte OAuth do projeto e compatibilidade com Actions. O servidor OAuth 2.1 do Supabase está disponível, mas não habilitar o cliente do GPT antes de restringir seus tokens nas políticas de banco e Storage. As políticas atuais permitem a tokens autenticados ler e modificar a biblioteca do próprio usuário, independentemente de `client_id`; os escopos OAuth não limitam acesso às tabelas.
 2. Definir permissões mínimas, consentimento e revogação.
 3. Configurar cliente e callbacks exatos fornecidos pelo GPT; cadastrar segredos somente em locais próprios.
 4. Implementar validação dos tokens e propriedade dos recursos.

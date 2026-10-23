@@ -1,6 +1,6 @@
 # Brains + ChatGPT — especificação e plano de implementação
 
-Data: 23/10/2026 · Versão: 1.0 · Status: proposta documentada, não implementada.
+Data: 23/10/2026 · Versão: 1.1 · Status: prova técnica de transferência iniciada; criação automática de cards não implementada.
 
 ## 1. Objetivo e experiência
 
@@ -69,7 +69,7 @@ OAuth individual: usuário conecta sua conta do Brains, autoriza capacidades lim
 
 Capacidades propostas: listar áreas, buscar vocabulário/duplicatas na área, preparar proposta e confirmar criação. Não conceder exclusão, acesso ao histórico ou modificação de agendamentos.
 
-Decisão técnica pendente: verificar se o projeto pode atuar como servidor OAuth compatível com Actions. Ter login Google/Supabase no Brains não implica que esse papel já esteja configurado. Validar provedor, endpoints de autorização/token, callbacks exatos do GPT, expiração, renovação e revogação. Preferir implementação mantida de OAuth; não improvisar emissão de tokens.
+O Supabase oferece servidor OAuth 2.1, ainda sem ativação para o GPT. Antes de cadastrar o cliente, restringir seus tokens nas políticas de banco, Storage e funções administrativas: as políticas atuais autorizam o usuário pelo `auth.uid()` e não diferenciam `client_id`, enquanto escopos OAuth não limitam acesso ao banco. Validar callbacks exatos do GPT, expiração, renovação e revogação. Preferir implementação mantida de OAuth; não improvisar emissão de tokens.
 
 Preservar RLS e validar propriedade da área e arquivos em cada operação. Segredos somente no servidor. Nenhuma credencial administrativa no GPT ou no navegador. Qualquer tabela auxiliar exposta exige políticas por usuário.
 

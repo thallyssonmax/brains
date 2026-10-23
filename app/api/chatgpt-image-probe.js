@@ -1,8 +1,15 @@
-import {createHash} from 'node:crypto';
-import {createClient} from '@supabase/supabase-js';
+import {createHash,timingSafeEqual} from 'node:crypto';
 
 const MAX_BYTES=5*1024*1024;
 const reply=(res,status,body)=>{res.statusCode=status;res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(body))};
+export function validProbeKey(header,secret){
+ if(typeof header!=='string'||typeof secret!=='string'||secret.length<32)return false;
+ const token=/^Bearer ([A-Za-z0-9_-]{32,128})$/.exec(header)?.[1];
+ if(!token)return false;
+ const supplied=createHash('sha256').update(token).digest();
+ const expected=createHash('sha256').update(secret).digest();
+ return timingSafeEqual(supplied,expected);
+}
 
 export function fileReference(body){
  const files=body?.openaiFileIdRefs;
@@ -38,13 +45,9 @@ export async function inspectImage(reference,download=fetch){
 export default async function handler(req,res){
  if(req.method!=='POST')return reply(res,405,{error:'method'});
  if(Number(req.headers['content-length']||0)>4000)return reply(res,413,{error:'input'});
- const token=/^Bearer (.+)$/.exec(req.headers.authorization||'')?.[1];
- if(!token)return reply(res,401,{error:'authentication'});
- const url=process.env.VITE_SUPABASE_URL,key=process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
- if(!url||!key)return reply(res,503,{error:'unavailable'});
- const client=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
- const {data,error}=await client.auth.getUser(token);
- if(error||!data.user||data.user.is_anonymous)return reply(res,401,{error:'authentication'});
+ const secret=process.env.BRAINS_CHATGPT_PROBE_KEY;
+ if(!secret)return reply(res,503,{error:'unavailable'});
+ if(!validProbeKey(req.headers.authorization,secret))return reply(res,401,{error:'authentication'});
  const reference=fileReference(req.body);
  if(!reference)return reply(res,400,{error:'image_reference'});
  try{return reply(res,200,{verified:true,fileId:reference.id,...await inspectImage(reference)})}
