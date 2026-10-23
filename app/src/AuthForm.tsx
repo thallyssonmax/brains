@@ -1,4 +1,4 @@
-import {authRedirect,consentDestination} from './routes';
+import {authRedirect} from './routes';
 import {useEffect,useRef,useState} from 'react';
 import {cloud,publicAuthSettings} from './cloud';
 import type {Locale} from './model';
@@ -12,7 +12,7 @@ export function AuthForm({locale,recovery=false,onRecovered,callbackError=false,
  async function run(action:()=>Promise<void>){if(locked.current)return;locked.current=true;setBusy(true);setError('');setMessage('');try{await action()}catch(e){setError(authErrorKey(e))}finally{locked.current=false;setBusy(false)}}
  if(!cloud)return <p role="alert">{t.setup}</p>;
  const newPassword=mode==='signup'||mode==='reset';
- return <section className="auth-form"><h1>{t[mode]}</h1>{google&&(mode==='login'||mode==='signup')&&<><button className="secondary wide" disabled={busy} onClick={()=>void run(async()=>{const destination=consentDestination(window.location.search);const redirectTo=oauthRedirectTo??(destination?new URL('/login'+window.location.search,window.location.origin).href:authRedirect(window.location.origin));const {error}=await cloud!.auth.signInWithOAuth({provider:'google',options:{redirectTo}});if(error)throw error})}>{t.google}</button><p className="small center">{t.or}</p></>}
+ return <section className="auth-form"><h1>{t[mode]}</h1>{google&&(mode==='login'||mode==='signup')&&<><button className="secondary wide" disabled={busy} onClick={()=>void run(async()=>{const {error}=await cloud!.auth.signInWithOAuth({provider:'google',options:{redirectTo:oauthRedirectTo??authRedirect(window.location.origin)}});if(error)throw error})}>{t.google}</button><p className="small center">{t.or}</p></>}
  <form onSubmit={e=>{e.preventDefault();if(newPassword&&password!==confirm){setError('mismatch');return}void run(async()=>{const result=await submitAuth(cloud!,mode,email,password,window.location.origin);if(result.error)throw result.error;setPassword('');setConfirm('');if(mode==='reset'){onRecovered();return}if(mode==='signup')setMessage('sent');if(mode==='forgot')setMessage('recoverySent')})}}>
  <fieldset disabled={busy}>
  {mode!=='reset'&&<><label htmlFor="auth-email">{t.email}</label><input id="auth-email" type="email" autoComplete="username" autoCapitalize="none" spellCheck={false} value={email} onChange={e=>setEmail(e.target.value)} required/></>}
