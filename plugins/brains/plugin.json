@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "brains-flashcards",
-  "version": "1.0.0",
-  "description": "Prepare flashcards with a ChatGPT-generated image for review in Brains. The user chooses an area and confirms before anything is saved.",
+  "version": "1.1.1",
+  "description": "Das palavras da conversa para a memória: prepare e revise um flashcard no Brains.",
   "author": {
     "name": "Brains",
     "url": "https://www.heybrains.app"
@@ -15,7 +15,7 @@
       "interface": {
         "displayName": "Brains — Criar flashcard",
         "shortDescription": "Da conversa para a sua memória",
-        "longDescription": "Prepare um flashcard com frase e imagem gerada no ChatGPT. Abra a prévia no Brains, escolha uma área e revise o conteúdo antes de salvar. O plugin não acessa sua biblioteca nem salva cards sozinho.",
+        "longDescription": "Transforme uma palavra que aprendeu em um flashcard com frase e imagem. Revise a prévia, escolha uma área e confirme no Brains. Nada é salvo sem sua confirmação.",
         "developerName": "Brains",
         "category": "Education",
         "capabilities": ["Preparar flashcards", "Transferir imagem gerada"],
