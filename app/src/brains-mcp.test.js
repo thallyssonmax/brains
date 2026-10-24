@@ -2,6 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
 import {createBrainsProbeServer} from '../api/brains-mcp.js';
+import {fetchImage,mcpFileReference} from '../api/chatgpt-image-probe.js';
 
 describe('Brains private MCP probe',()=>{
  it('advertises a file input and verifies image bytes without a Brains account',async()=>{
@@ -19,5 +20,12 @@ describe('Brains private MCP probe',()=>{
    const result=await client.callTool({name:'verify_generated_image',arguments:{file:{download_url:'https://files.oaiusercontent.com/file-12345678?x=1',file_id:'file-12345678'}}});
    expect(result.structuredContent).toMatchObject({verified:true,mime:'image/png',size:bytes.length});
   }finally{await client.close();await server.close()}
+ });
+ it('classifies unsupported, oversized and inaccessible image bytes safely',async()=>{
+  const reference=mcpFileReference({download_url:'https://files.oaiusercontent.com/file?sig=x',file_id:'file_12345678'});
+  await expect(fetchImage(reference,async()=>new Response(Buffer.from('not an image')))).rejects.toThrow('UNSUPPORTED_IMAGE_FORMAT');
+  await expect(fetchImage(reference,async()=>new Response(new Uint8Array(5*1024*1024+1)))).rejects.toThrow('IMAGE_TOO_LARGE');
+  await expect(fetchImage(reference,async()=>new Response(null,{status:403}))).rejects.toThrow('IMAGE_ACCESS_FAILED');
+  await expect(fetchImage(reference,async()=>{throw Error('network')})).rejects.toThrow('IMAGE_ACCESS_FAILED');
  });
 });

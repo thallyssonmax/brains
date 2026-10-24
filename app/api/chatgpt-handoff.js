@@ -2,8 +2,12 @@ import {mcpFileReference} from './chatgpt-image-probe.js';
 
 export const HANDOFF_TTL=30*60*1000;
 export function prepareHandoff({front,back,file,withoutImage=false},now=Date.now()){
- if(typeof front!=='string'||typeof back!=='string'||!front.trim()||!back.trim()||front.length>200||back.length>800)throw Error('invalid_text');
- if(!withoutImage&&!mcpFileReference(file))throw Error('invalid_image');
+ if(typeof front!=='string'||!front.trim())throw Error('MISSING_FRONT');
+ if(front.length>200)throw Error('FRONT_TOO_LONG');
+ if(typeof back!=='string'||!back.trim())throw Error('MISSING_BACK');
+ if(back.length>800)throw Error('BACK_TOO_LONG');
+ if(!withoutImage&&!file)throw Error('MISSING_IMAGE');
+ if(!withoutImage&&!mcpFileReference(file))throw Error('INVALID_IMAGE_REFERENCE');
  const payload={v:1,front:front.trim(),back:back.trim(),createdAt:now,...(!withoutImage?{file:{download_url:file.download_url,file_id:file.file_id,mime_type:file.mime_type}}:{withoutImage:true})};
  return 'https://www.heybrains.app/import/chatgpt#payload='+Buffer.from(JSON.stringify(payload)).toString('base64url');
 }

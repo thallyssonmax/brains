@@ -42,15 +42,16 @@ export function imageMime(bytes){
 }
 
 export async function fetchImage(reference,download=fetch){
- const response=await download(reference.url,{redirect:'error',signal:AbortSignal.timeout(8000),headers:{Accept:'image/png,image/jpeg,image/webp'}});
- if(!response.ok||!response.body)throw Error('download');
+ let response;
+ try{response=await download(reference.url,{redirect:'error',signal:AbortSignal.timeout(8000),headers:{Accept:'image/png,image/jpeg,image/webp'}})}catch{throw Error('IMAGE_ACCESS_FAILED')}
+ if(!response.ok||!response.body)throw Error('IMAGE_ACCESS_FAILED');
  const length=Number(response.headers.get('content-length'));
- if(Number.isFinite(length)&&length>MAX_BYTES)throw Error('size');
+ if(Number.isFinite(length)&&length>MAX_BYTES)throw Error('IMAGE_TOO_LARGE');
  const chunks=[];let size=0;
- for await(const chunk of response.body){size+=chunk.length;if(size>MAX_BYTES){await response.body.cancel().catch(()=>{});throw Error('size')}chunks.push(Buffer.from(chunk))}
+ try{for await(const chunk of response.body){size+=chunk.length;if(size>MAX_BYTES){await response.body.cancel().catch(()=>{});throw Error('IMAGE_TOO_LARGE')}chunks.push(Buffer.from(chunk))}}catch(error){if(error instanceof Error&&error.message==='IMAGE_TOO_LARGE')throw error;throw Error('IMAGE_ACCESS_FAILED')}
  const bytes=Buffer.concat(chunks);
  const mime=imageMime(bytes);
- if(!mime)throw Error('type');
+ if(!mime)throw Error('UNSUPPORTED_IMAGE_FORMAT');
  return {mime,size,sha256:createHash('sha256').update(bytes).digest('hex'),bytes};
 }
 export async function inspectImage(reference,download=fetch){

@@ -18,5 +18,10 @@ export default async function handler(req,res){
   if(!reference)throw Error('invalid_image');
   const image=await fetchImage(reference);
   res.statusCode=200;res.setHeader('Content-Type',image.mime);res.setHeader('Content-Length',String(image.size));res.setHeader('X-Content-Type-Options','nosniff');res.end(image.bytes);
- }catch{res.statusCode=422;res.end()}
+ }catch(error){
+  const code=error instanceof Error?error.message:'IMAGE_ACCESS_FAILED';
+  const allowed=new Set(['invalid_handoff','expired_handoff','invalid_image','IMAGE_ACCESS_FAILED','UNSUPPORTED_IMAGE_FORMAT','IMAGE_TOO_LARGE']);
+  const safeCode=allowed.has(code)?code:'IMAGE_ACCESS_FAILED';
+  res.statusCode=422;res.setHeader('Content-Type','application/json; charset=utf-8');res.end(JSON.stringify({code:safeCode}));
+ }
 }
