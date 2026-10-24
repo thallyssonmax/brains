@@ -1,0 +1,23 @@
+@media (max-width: 760px) {
+  .bottom {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px max(12px, env(safe-area-inset-left, 0px))
+      calc(10px + env(safe-area-inset-bottom, 0px))
+      max(12px, env(safe-area-inset-right, 0px));
+    z-index: 50;
+  }
+
+  .main {
+    padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 380px) {
+  .main {
+    padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+  }
+}
