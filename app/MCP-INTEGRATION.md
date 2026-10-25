@@ -22,7 +22,7 @@ No projeto Supabase existente, em **Authentication → OAuth Server**:
 
 1. Habilite o servidor OAuth 2.1.
 2. Defina **Authorization Path** como `/oauth/consent`.
-3. Use Dynamic Client Registration se o conector ChatGPT pedir para registrar o cliente automaticamente. Se fizer o registro manual, crie um cliente OAuth público e use a URL de callback exata mostrada pelo ChatGPT.
+3. Mantenha Dynamic Client Registration desativado. Registre manualmente um cliente OAuth público e use a URL de callback exata mostrada pelo ChatGPT.
 4. Confirme em **Authentication → URL Configuration** que o Site URL aponta para `https://www.heybrains.app`.
 5. Cadastre o ID desse cliente nas variáveis da Vercel: `BRAINS_CHATGPT_CLIENT_ID` para a função MCP e `VITE_BRAINS_CHATGPT_CLIENT_ID` para a tela de consentimento. Ambas devem receber o mesmo ID. Se o ChatGPT registrar o cliente dinamicamente, a primeira tentativa mostra o ID e bloqueia a autorização; depois de adicioná-lo às duas variáveis e publicar, reinicie a conexão e autorize esse cliente. A implementação falha de forma fechada enquanto o ID não estiver configurado.
 6. Mantenha a aprovação OAuth do usuário habilitada e autorize somente o cliente esperado.

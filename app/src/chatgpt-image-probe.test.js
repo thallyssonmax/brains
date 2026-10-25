@@ -23,8 +23,8 @@ describe('ChatGPT image transfer probe',()=>{
  });
  it('rejects non-images and oversized responses',async()=>{
   const reference=fileReference({openaiFileIdRefs:[ref]});
-  await expect(inspectImage(reference,async()=>new Response('hello'))).rejects.toThrow('type');
-  await expect(inspectImage(reference,async()=>new Response('x',{headers:{'content-length':String(6*1024*1024)}}))).rejects.toThrow('size');
+  await expect(inspectImage(reference,async()=>new Response('hello'))).rejects.toThrow('UNSUPPORTED_IMAGE_FORMAT');
+  await expect(inspectImage(reference,async()=>new Response('x',{headers:{'content-length':String(6*1024*1024)}}))).rejects.toThrow('IMAGE_TOO_LARGE');
  });
  it('validates plugin file inputs with the same outbound URL rules',()=>{
   expect(mcpFileReference({file_id:'file_00000000e77c820e9e1468a63b8f64cd',download_url:'https://sdmntprbrazilsouth.oaiusercontent.com/files/example/raw?se=abc'})?.id).toBe('file_00000000e77c820e9e1468a63b8f64cd');
