@@ -53,3 +53,21 @@ nav a.nav { text-decoration: none; }
 .chatgpt-import .import-image {display:block;width:min(100%,320px);aspect-ratio:1;object-fit:contain;margin:1rem auto;border-radius:1rem}
 .chatgpt-import .import-checkbox {display:flex;align-items:center;gap:.6rem;margin:1rem 0}
 .chatgpt-import .import-checkbox input {width:auto}
+
+
+/* Spaced review: keep both faces aligned while flipping the card. */
+.review-flash{perspective:1200px;overflow:visible}
+.flash-flipper{display:grid;width:100%;transform-style:preserve-3d;transition:transform 420ms cubic-bezier(.2,.72,.25,1)}
+.flash-flipper.is-back{transform:rotateY(180deg)}
+.flash-face{grid-area:1/1;min-width:0;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.flash-face-back{transform:rotateY(180deg)}
+.flash-face[aria-hidden=true]{pointer-events:none}
+.review-flash{animation:review-card-enter 220ms ease-out both}
+@keyframes review-card-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.actions .good,.actions .bad{transition:background-color .15s ease,transform .15s ease,box-shadow .15s ease}
+.actions .good:hover:not(:disabled){background:#d5f0e2;transform:translateY(-1px)}
+.actions .bad:hover:not(:disabled){background:#ffdcdf;transform:translateY(-1px)}
+.actions .good:active:not(:disabled),.actions .bad:active:not(:disabled){transform:scale(.98)}
+.review-state{min-height:24px;margin:12px 0 0}
+@media(max-width:760px){.review-flash{min-height:330px;padding:28px 18px}.flash-face .eyebrow{margin-bottom:22px}}
+@media(prefers-reduced-motion:reduce){.flash-flipper{transition:none}.review-flash{animation:none}}
