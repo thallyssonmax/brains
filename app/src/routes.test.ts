@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {accessRedirect,authCallback,authRedirect,productRoute,areaPath} from './routes';
+import {accessRedirect,authCallback,authRedirect,productRoute,areaPath,consentDestination} from './routes';
 describe('public and authenticated routes',()=>{
  it.each(['/home','/areas','/settings','/areas/existing-id'])('protects %s without changing account data',path=>{
   expect(accessRedirect(path,false,false)).toBe('/login');
@@ -16,6 +16,15 @@ describe('public and authenticated routes',()=>{
   expect(accessRedirect('/login',true,false,'?next=admin')).toBe('/admin');
   expect(accessRedirect('/login',true,false)).toBe('/home');
   expect(accessRedirect('/login',true,true,'?next=admin')).toBeNull();
+ });
+ it('preserves OAuth authorization through login and consent',()=>{
+  const id='f0837cd4-1111-4444-9999-ffeabcabcdef';
+  expect(accessRedirect('/oauth/consent',false,false,`?authorization_id=${id}`)).toBe(`/login?next=oauth&authorization_id=${id}`);
+  expect(accessRedirect('/login',true,false,`?next=oauth&authorization_id=${id}`)).toBe(`/oauth/consent?authorization_id=${id}`);
+  expect(consentDestination('?next=oauth&authorization_id=bad')).toBeNull();
+  expect(consentDestination('?next=https://evil.example&authorization_id='+id)).toBeNull();
+  expect(accessRedirect('/oauth/consent',true,false,`?authorization_id=${id}`)).toBeNull();
+  expect(accessRedirect('/oauth/consent',false,false)).toBe('/login');
  });
  it.each(['?next=https://evil.example','?next=//evil.example','?next=/admin','?next=/settings'])('rejects arbitrary return destinations: %s',search=>{
   expect(accessRedirect('/login',true,false,search)).toBe('/home');

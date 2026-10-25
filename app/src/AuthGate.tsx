@@ -6,12 +6,12 @@ import type {User} from '@supabase/supabase-js';
 import {cloud} from './cloud';
 import {AuthForm} from './AuthForm';
 import {captureChatGPTHandoff} from './chatgpt-handoff';
-
 import type {Locale} from './model';
 import {Navigate,useLocation,useNavigate,Link} from 'react-router-dom';
 import {accessRedirect,isAdminRoute,paths,productRoute} from './routes';
 const Admin=lazy(()=>import('./Admin'));
 const ChatGPTImport=lazy(()=>import('./ChatGPTImport').then(module=>({default:module.ChatGPTImport})));
+const OAuthConsent=lazy(()=>import('./OAuthConsent').then(module=>({default:module.OAuthConsent})));
 export function AuthGate({children}:{children:ReactNode}){
  const location=useLocation(),navigate=useNavigate();
  const [user,setUser]=useState<User|null>(null),[loading,setLoading]=useState(!!cloud),[locale]=useState<Locale>(()=>navigator.language.startsWith('es')?'es':navigator.language.startsWith('en')?'en':'pt');
@@ -25,11 +25,11 @@ export function AuthGate({children}:{children:ReactNode}){
  },[]);
  const redirect=!loading?accessRedirect(location.pathname,!!user,recovery,location.search):null;
  const tracker=<AnalyticsTracker userId={user?.id??null} ready={!loading}/>;
- if(redirect)return <>{tracker}<Navigate to={redirect} replace/></>;
+ if(redirect)return <>{tracker}<Navigate to={redirect} replace/>;</>;
+ if(location.pathname===paths.oauthConsent)return loading?<main className="login-page" role="status">Carregando autorização…</main>:user&&!recovery?<Suspense fallback={<main className="login-page" role="status">Carregando autorização…</main>}><OAuthConsent/></Suspense>:null;
  if(!loading&&user&&!recovery&&isAdminRoute(location.pathname))return <>{tracker}<Suspense fallback={<main className="login-page" role="status">Carregando Admin…</main>}><Admin key={user.id}/></Suspense></>;
  if(location.pathname==='/import/chatgpt')return loading?<main className="login-page" role="status">Carregando…</main>:user?<AccountStore key={user.id} userId={user.id}><Suspense fallback={<main className="main standalone" role="status">Carregando card…</main>}><ChatGPTImport handoffKey={handoffKey}/></Suspense></AccountStore>:<main className="login-page"><div className="login-card"><a href={paths.landing} className="brand"><span className="mark">B</span>Brains</a><p>Entre na sua conta para revisar o card antes de salvá-lo.</p><AuthForm locale={locale} onRecovered={()=>navigate(paths.home,{replace:true})} oauthRedirectTo={window.location.href}/></div></main>;
  if(!loading&&user&&!recovery&&productRoute(location.pathname))return <>{tracker}<AccountStore key={user.id} userId={user.id}>{children}</AccountStore></>;
  if(!loading&&location.pathname!==paths.login)return <main className="login-page"><div className="login-card"><h1>404</h1><p>{locale==='pt'?'Página não encontrada.':locale==='es'?'Página no encontrada.':'Page not found.'}</p><Link to={user?paths.home:paths.login}>{locale==='pt'?'Acessar o Brains':locale==='es'?'Acceder a Brains':'Open Brains'}</Link></div></main>;
-
  return <>{tracker}<main className="login-page"><div className="login-card"><a href={paths.landing} className="brand"><span className="mark">B</span>Brains</a>{loading?<p role="status">{locale==='pt'?'Carregando sua conta…':locale==='es'?'Cargando tu cuenta…':'Loading your account…'}</p>:<AuthForm locale={locale} recovery={recovery&&!!user} callbackError={callbackError} onRecovered={()=>{setRecovery(false);navigate(paths.home,{replace:true})}}/>}</div></main></>;
 }
