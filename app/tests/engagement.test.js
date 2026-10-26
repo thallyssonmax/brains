@@ -38,7 +38,7 @@ test('Resend signature uses the exact raw body and a fresh timestamp',()=>{
  assert.equal(verifySvix(raw,headers,secret,Date.now()+3600000),false);
 });
 test('engagement email escapes user text and includes opt-out',()=>{
- const email=emailContent({campaign:'welcome',first_name:'<script>','https://www.heybrains.app/unsubscribe');
+ const email=emailContent({campaign:'welcome',first_name:'<script>'},'https://www.heybrains.app/unsubscribe');
  assert.equal(email.html.includes('<script>'),false);
  assert.equal(email.html.includes('&lt;script&gt;'),true);
  assert.equal(email.text.includes('Descadastrar')||email.text.includes('parar de receber'),true);
