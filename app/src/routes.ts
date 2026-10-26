@@ -1,6 +1,6 @@
 export const paths = {landing:'/', login:'/login', home:'/home', areas:'/areas', settings:'/settings', oauthConsent:'/oauth/consent'} as const;
 export const areaPath = (id:string) => `${paths.areas}/${encodeURIComponent(id)}`;
-export function isAdminRoute(path:string){return /^\/admin(?:\/(?:users|funnel))?\/?$/.test(path)}
+export function isAdminRoute(path:string){return /^\/admin(?:\/(?:users|funnel|activation))?\/?$/.test(path)}
 export function productRoute(pathname:string):{page:'home'|'decks'|'area'|'settings';areaId:string}|null {
  const path=pathname.replace(/\/+$/,'')||'/';
  if(path===paths.home)return {page:'home',areaId:''};
