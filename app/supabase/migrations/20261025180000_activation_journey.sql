@@ -383,7 +383,9 @@ language sql stable security definer set search_path='' as $$
       and (last_activity_at is null or last_activity_at<=now()-interval '7 days')
       and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id
        and m.campaign='first_card_7d' and m.status not in ('cancelled','retryable')) then 'first_card_7d'
-    when first_area_at<=now()-interval '72 hours' and first_card_at is null and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id and m.campaign='first_card_72h' and m.status not in ('cancelled','retryable')) then 'first_card_72h'
+    when first_area_at<=now()-interval '72 hours' and first_card_at is null
+      and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id
+       and m.campaign in ('first_card_72h','first_card_7d') and m.status not in ('cancelled','retryable')) then 'first_card_72h'
     when last_session_at>=now()-interval '24 hours' and next_due is not null and pending_count=0
       and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id and m.campaign='review_complete' and m.created_at>=s.last_session_at) then 'review_complete'
     when first_card_at is not null and first_habit_day is null and last_activity_at<=now()-interval '7 days'
