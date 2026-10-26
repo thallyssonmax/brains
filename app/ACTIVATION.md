@@ -14,7 +14,7 @@ A primeira área só tem data quando o trigger de analytics já a capturou. Um v
 
 ## Comunicação
 
-O consentimento para e-mails de aprendizado é opt-in, separado dos e-mails essenciais de autenticação. No cadastro por e-mail, a caixa começa desmarcada e a escolha afirmativa é gravada com a conta; quem entra com Google pode ativá-la em Configurações. Usuários existentes começam sem consentimento nesta extensão. O usuário pode desligá-lo em Configurações ou no link de descadastro. Bounces e reclamações desligam o consentimento. O Resend SMTP já usado pelo Supabase Auth continua independente; os novos envios de engajamento usam a API HTTP do Resend com chave de idempotência.
+A preferência de e-mails de aprendizado começa marcada no cadastro e em Configurações para contas sem escolha salva. Uma escolha explícita de desativar permanece desativada. A atualização dessa preferência não libera disparos: o bloqueio de envio no servidor continua ativo até autorização posterior. Os e-mails essenciais de autenticação continuam separados. O usuário pode desligar os e-mails de aprendizado em Configurações ou no link de descadastro; devoluções e reclamações também os desativam. O Resend SMTP já usado pelo Supabase Auth continua independente; os futuros envios de aprendizado usam a API HTTP do Resend com chave de idempotência.
 
 O cron da Vercel Hobby roda uma vez por dia, às 13:00 UTC (10:00 em Brasília), sujeito à precisão da plataforma. Ele reavalia elegibilidade imediatamente antes de enviar, limita a 20 mensagens por execução para preservar a cota gratuita compartilhada com a autenticação, aplica limite de um envio por usuário em 24 horas, três lembretes de revisão em sete dias e cooldown de sete dias para reengajamento. **Nesta versão há um bloqueio permanente no código:** `ENGAGEMENT_RELEASE_UNLOCKED=false`. Mesmo se as chaves de ativação forem configuradas, o cron retorna sem consultar candidatos ou enviar. A liberação futura exige autorização explícita e nova versão do código. Nesta fase, há também uma restrição a um único destinatário de teste definido em `ENGAGEMENT_TEST_RECIPIENT` no servidor. Sem essa variável, nenhum destinatário é aceito. O webhook aceita somente assinatura válida sobre o corpo original, grava eventos por ID de entrega e permite repetição sem duplicá-los.
 
@@ -35,3 +35,4 @@ Não registrar chaves no repositório ou no navegador. A migração não deve se
 - `npm run build` com Node compatível e permissão para executar o binário esbuild.
 
 Os cenários de produção devem usar contas próprias de teste e nunca disparo em massa. Após a migração, validar consulta admin/negação a não administradores, eventos históricos, opt-in/opt-out, chave de idempotência, assinatura e replay do webhook e retorno orgânico sem atribuição.
+
