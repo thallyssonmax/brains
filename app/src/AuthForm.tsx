@@ -4,7 +4,7 @@ import {cloud,publicAuthSettings} from './cloud';
 import type {Locale} from './model';
 import {authTexts} from './auth-texts';
 import {submitAuth,authErrorKey,type AuthMode} from './auth-actions';
-export function AuthForm({locale,recovery=false,onRecovered,callbackError=false,oauthRedirectTo}:{locale:Locale;recovery?:boolean;onRecovered:()=>void;callbackError?:boolean;oauthRedirectTo?:string;returnTo?:string}){
+export function AuthForm({locale,recovery=false,onRecovered,callbackError=false,oauthRedirectTo,returnTo}:{locale:Locale;recovery?:boolean;onRecovered:()=>void;callbackError?:boolean;oauthRedirectTo?:string;returnTo?:string}){
  const t=authTexts[locale];const [mode,setMode]=useState<AuthMode>(recovery?'reset':'login');const [name,setName]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[confirm,setConfirm]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState<keyof typeof t|''>(callbackError?'callbackError':''),[message,setMessage]=useState<keyof typeof t|''>(''),[google,setGoogle]=useState(false),[signupAllowed,setSignupAllowed]=useState(true);const locked=useRef(false);
  useEffect(()=>{let live=true;void publicAuthSettings().then(settings=>{if(live){setGoogle(!!settings.external?.google);setSignupAllowed(!settings.disable_signup)}}).catch(()=>{});return()=>{live=false}},[]);
  useEffect(()=>{if(recovery)setMode('reset')},[recovery]);
