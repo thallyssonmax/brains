@@ -45,7 +45,7 @@ export default function App(){
   const query=new URLSearchParams(location.search);
   const action=query.get('createArea')==='1'&&route.page==='decks'?'createArea':query.get('createCard')==='1'&&route.page==='area'?'createCard':query.get('review')==='1'&&route.page==='home'?'review':null;
   if(!action)return;
-  const actionKey=location.pathname+':'+action+':'+(route.areaId||'');
+  const actionKey=location.pathname+':'+action+':'+(route.areaId||'')+':'+(query.get('email_message_id')||'');
   if(processedEmailAction.current===actionKey)return;
   processedEmailAction.current=actionKey;
   query.delete(action);const qs=query.toString();const clean=location.pathname+(qs?'?'+qs:'');
