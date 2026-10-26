@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash,createHmac} from 'node:crypto';
 import {emailContent} from '../api/engagement-content.js';
 import {unsubscribeToken,verifyUnsubscribe,verifySvix} from '../api/engagement-security.js';
-import {GET as runCron,POST as handleWelcome,approvedTestRecipient} from '../api/engagement-cron.js';
+import {GET as runCron,handleWelcome,approvedTestRecipient} from '../api/engagement-cron.js';
 
 
 test('test sending accepts only the privately configured recipient',()=>{
@@ -38,7 +38,7 @@ test('Resend signature uses the exact raw body and a fresh timestamp',()=>{
  assert.equal(verifySvix(raw,headers,secret,Date.now()+3600000),false);
 });
 test('engagement email escapes user text and includes opt-out',()=>{
- const email=emailContent({campaign:'welcome',first_name:'Ana',area_name:'<script>'},'https://www.heybrains.app/unsubscribe');
+ const email=emailContent({campaign:'welcome',first_name:'<script>','https://www.heybrains.app/unsubscribe');
  assert.equal(email.html.includes('<script>'),false);
  assert.equal(email.html.includes('&lt;script&gt;'),true);
  assert.equal(email.text.includes('Descadastrar')||email.text.includes('parar de receber'),true);
