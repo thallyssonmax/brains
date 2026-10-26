@@ -17,13 +17,16 @@ function safeProductTarget(value:string|null){
  if(!value||!value.startsWith('/')||value.startsWith('//')||value.includes(String.fromCharCode(92)))return null;
  let parsed:URL;try{parsed=new URL(value,'https://www.heybrains.app')}catch{return null}
  if(parsed.origin!=='https://www.heybrains.app'||!productRoute(parsed.pathname))return null;
+ const allowedKeys=new Set(['email_message_id','createArea','createCard','review','utm_source']);
+ for(const key of parsed.searchParams.keys())if(!allowedKeys.has(key))return null;
+ for(const key of allowedKeys)if(parsed.searchParams.getAll(key).length>1)return null;
+ const route=productRoute(parsed.pathname);
  const query=new URLSearchParams();
  const message=parsed.searchParams.get('email_message_id');
- if(message&&isUuid(message))query.set('email_message_id',message);
- const route=productRoute(parsed.pathname);
- if(parsed.searchParams.get('createArea')==='1'&&route?.page==='decks')query.set('createArea','1');
- if(parsed.searchParams.get('createCard')==='1'&&route?.page==='area')query.set('createCard','1');
- if(parsed.searchParams.get('review')==='1'&&route?.page==='home')query.set('review','1');
+ if(parsed.searchParams.has('email_message_id')){if(!message||!isUuid(message))return null;query.set('email_message_id',message)}
+ if(parsed.searchParams.has('createArea')){if(parsed.searchParams.get('createArea')!=='1'||route?.page!=='decks')return null;query.set('createArea','1')}
+ if(parsed.searchParams.has('createCard')){if(parsed.searchParams.get('createCard')!=='1'||route?.page!=='area')return null;query.set('createCard','1')}
+ if(parsed.searchParams.has('review')){if(parsed.searchParams.get('review')!=='1'||route?.page!=='home')return null;query.set('review','1')}
  const qs=query.toString();return parsed.pathname+(qs?'?'+qs:'');
 }
 export function returnDestination(search=''){return safeProductTarget(new URLSearchParams(search).get('next'))}
