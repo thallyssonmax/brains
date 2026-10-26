@@ -20,14 +20,14 @@ describe('public and authenticated routes',()=>{
  });
  it('preserves OAuth authorization through login and consent',()=>{
   const id='f0837cd4-1111-4444-9999-ffeabcabcdef';
-  expect(accessRedirect('/oauth/consent',false,false,\`?authorization_id=\${id}\`)).toBe(\`/login?next=oauth&authorization_id=\${id}\`);
-  expect(accessRedirect('/login',true,false,\`?next=oauth&authorization_id=\${id}\`)).toBe(\`/oauth/consent?authorization_id=\${id}\`);
+  expect(accessRedirect('/oauth/consent',false,false,'?authorization_id='+id)).toBe('/login?next=oauth&authorization_id='+id);
+  expect(accessRedirect('/login',true,false,'?next=oauth&authorization_id='+id)).toBe('/oauth/consent?authorization_id='+id);
   expect(consentDestination('?next=oauth&authorization_id=bad')).toBeNull();
   expect(consentDestination('?next=https://evil.example&authorization_id='+id)).toBeNull();
-  expect(accessRedirect('/oauth/consent',true,false,\`?authorization_id=\${id}\`)).toBeNull();
+  expect(accessRedirect('/oauth/consent',true,false,'?authorization_id='+id)).toBeNull();
   expect(accessRedirect('/oauth/consent',false,false)).toBe('/login');
  });
- it.each(['?next=https://evil.example','?next=//evil.example','?next=/admin','?next=/settings?x=unsafe','?next=/areas?createArea=1%26email_message_id%3Devil','?next=\\\\evil.example'])('rejects arbitrary or unsafe return destinations: %s',search=>{
+ it.each(['?next=https://evil.example','?next=//evil.example','?next=/admin','?next=/settings?x=unsafe','?next=/areas?createArea=1%26email_message_id%3Devil','?next='+encodeURIComponent('\\\\evil.example')])('rejects arbitrary or unsafe return destinations: %s',search=>{
   expect(returnDestination(search)).toBeNull();
  });
  it('keeps only known Brains actions and the opaque message id',()=>{
