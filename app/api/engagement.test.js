@@ -3,7 +3,14 @@ import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {emailContent} from './engagement-content.js';
 import {unsubscribeToken,verifyUnsubscribe,verifySvix} from './engagement-security.js';
-import {GET as runCron} from './engagement-cron.js';
+import {GET as runCron,approvedTestRecipient} from './engagement-cron.js';
+
+test('test sending accepts only the administrator email',()=>{
+ assert.equal(approvedTestRecipient(' thallyssondesigner@gmail.com '),true);
+ assert.equal(approvedTestRecipient('other@example.com'),false);
+ assert.equal(approvedTestRecipient('thallyssondesigner@gmail.com.evil.test'),false);
+ assert.equal(approvedTestRecipient(null),false);
+});
 
 test('unsubscribe tokens are signed and expire',()=>{
  const userId='11111111-1111-1111-1111-111111111111';
@@ -28,11 +35,11 @@ test('engagement email escapes user text and includes opt-out',()=>{
  assert.equal(email.text.includes('Descadastrar')||email.text.includes('parar de receber'),true);
 });
 test('cron refuses unauthenticated calls and stays off by default',async()=>{
- const previous=process.env.CRON_SECRET,enabled=process.env.ENGAGEMENT_ENABLED;
+ const previous=process.env.CRON_SECRET,enabled=process.env.ENGAGEMENT_ENABLED,approved=process.env.ENGAGEMENT_RELEASE_APPROVED;
  try{
-  process.env.CRON_SECRET='test-secret';delete process.env.ENGAGEMENT_ENABLED;
+  process.env.CRON_SECRET='test-secret';process.env.ENGAGEMENT_ENABLED='true';delete process.env.ENGAGEMENT_RELEASE_APPROVED;
   assert.equal((await runCron(new Request('https://www.heybrains.app/api/engagement-cron'))).status,401);
   const reply=await runCron(new Request('https://www.heybrains.app/api/engagement-cron',{headers:{Authorization:'Bearer test-secret'}}));
   assert.deepEqual(await reply.json(),{enabled:false,sent:0});
- }finally{if(previous===undefined)delete process.env.CRON_SECRET;else process.env.CRON_SECRET=previous;if(enabled===undefined)delete process.env.ENGAGEMENT_ENABLED;else process.env.ENGAGEMENT_ENABLED=enabled}
+ }finally{if(previous===undefined)delete process.env.CRON_SECRET;else process.env.CRON_SECRET=previous;if(enabled===undefined)delete process.env.ENGAGEMENT_ENABLED;else process.env.ENGAGEMENT_ENABLED=enabled;if(approved===undefined)delete process.env.ENGAGEMENT_RELEASE_APPROVED;else process.env.ENGAGEMENT_RELEASE_APPROVED=approved}
 });

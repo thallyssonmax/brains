@@ -3,20 +3,24 @@ import {emailContent} from './engagement-content.js';
 import {equalSecret,unsubscribeToken} from './engagement-security.js';
 
 const response=(status,body)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
+// Temporary launch gate: remove only after explicit approval for general sending.
+export const approvedTestRecipient=email=>typeof email==='string'&&email.trim().toLowerCase()==='thallyssondesigner@gmail.com';
 export function serviceClient(){const url=process.env.SUPABASE_URL||process.env.VITE_SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw Error('serviceConfigurationMissing');return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}})}
 
 export async function GET(request){
  if(!equalSecret(request.headers.get('authorization'),`Bearer ${process.env.CRON_SECRET||''}`)||!process.env.CRON_SECRET)return response(401,{error:'unauthorized'});
- if(process.env.ENGAGEMENT_ENABLED!=='true')return response(200,{enabled:false,sent:0});
+ if(process.env.ENGAGEMENT_ENABLED!=='true'||process.env.ENGAGEMENT_RELEASE_APPROVED!=='true')return response(200,{enabled:false,sent:0});
  if(!process.env.RESEND_API_KEY||!process.env.EMAIL_UNSUBSCRIBE_SECRET)return response(503,{error:'emailConfigurationMissing'});
  const db=serviceClient();const {data:candidates,error}=await db.rpc('brains_engagement_candidates');
  if(error){console.error('engagement_candidates_failed',error.code);return response(503,{error:'database'});}
  let sent=0,failed=0,skipped=0;
  // The Hobby cron runs daily. Keep well below Resend's free daily quota, shared with Auth mail.
  for(const candidate of (candidates||[]).slice(0,20)){
+  if(!approvedTestRecipient(candidate.email)){skipped++;continue}
   const {data:message,error:claimError}=await db.rpc('brains_engagement_claim',{p_user_id:candidate.user_id,p_campaign:candidate.campaign,p_occurrence_key:candidate.occurrence_key});
   if(claimError){failed++;console.error('engagement_claim_failed',claimError.code);continue}
   if(!message){skipped++;continue}
+  if(!approvedTestRecipient(message.email)){failed++;await db.rpc('brains_engagement_mark',{p_message_id:message.id,p_status:'failed'});console.error('engagement_recipient_rejected');continue}
   const expiry=Math.floor(Date.now()/1000)+90*86400;
   const token=unsubscribeToken(message.user_id,process.env.EMAIL_UNSUBSCRIBE_SECRET,expiry);
   const unsubscribeUrl=`https://www.heybrains.app/api/email-unsubscribe?token=${encodeURIComponent(token)}`;

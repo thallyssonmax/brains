@@ -396,7 +396,7 @@ language sql stable security definer set search_path='' as $$
   from state s where email_confirmed_at is not null and (banned_until is null or banned_until<now())
    and (last_sent_at is null or last_sent_at<=now()-interval '24 hours')
  )
- select e.user_id,e.email,
+ select e.user_id,e.email::text,
   nullif(split_part(coalesce(e.full_name,''),' ',1),'') first_name,e.area_name,e.campaign,
   case when e.campaign in ('welcome','first_card_72h') then 'first-area'
        when e.campaign='review_complete' then e.last_session_at::text
