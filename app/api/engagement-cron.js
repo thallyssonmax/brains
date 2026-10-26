@@ -1,23 +1,25 @@
 import {createClient} from '@supabase/supabase-js';
+import {createHash} from 'node:crypto';
 import {emailContent} from './engagement-content.js';
 import {equalSecret,unsubscribeToken} from './engagement-security.js';
 
 const response=(status,body)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
-// Launch remains locked until the owner explicitly authorizes sending and a later release removes this gate.
+// The owner authorized a test for one account. General release remains locked.
 export const ENGAGEMENT_RELEASE_UNLOCKED=false;
-// A test recipient must be configured privately on the server after sending is authorized.
-export const approvedTestRecipient=email=>typeof email==='string'&&typeof process.env.ENGAGEMENT_TEST_RECIPIENT==='string'&&process.env.ENGAGEMENT_TEST_RECIPIENT.trim()!==''&&email.trim().toLowerCase()===process.env.ENGAGEMENT_TEST_RECIPIENT.trim().toLowerCase();
+export const ENGAGEMENT_TEST_RELEASE_UNLOCKED=true;
+const TEST_RECIPIENT_SHA256='a01b27204b7093a8c41416d9ed64d519c5a6994382880f93628a8ca2ca5c40b3';
+export const approvedTestRecipient=(email,allowedDigest=TEST_RECIPIENT_SHA256)=>typeof email==='string'&&typeof process.env.ENGAGEMENT_TEST_RECIPIENT==='string'&&process.env.ENGAGEMENT_TEST_RECIPIENT.trim()!==''&&email.trim().toLowerCase()===process.env.ENGAGEMENT_TEST_RECIPIENT.trim().toLowerCase()&&createHash('sha256').update(email.trim().toLowerCase()).digest('hex')===allowedDigest;
 export function serviceClient(){const url=process.env.SUPABASE_URL||process.env.VITE_SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw Error('serviceConfigurationMissing');return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}})}
 
 export async function GET(request){
  if(!equalSecret(request.headers.get('authorization'),`Bearer ${process.env.CRON_SECRET||''}`)||!process.env.CRON_SECRET)return response(401,{error:'unauthorized'});
- if(!ENGAGEMENT_RELEASE_UNLOCKED||process.env.ENGAGEMENT_ENABLED!=='true'||process.env.ENGAGEMENT_RELEASE_APPROVED!=='true')return response(200,{enabled:false,sent:0});
+ if(!ENGAGEMENT_TEST_RELEASE_UNLOCKED||process.env.ENGAGEMENT_ENABLED!=='true'||process.env.ENGAGEMENT_RELEASE_APPROVED!=='true'||!approvedTestRecipient(process.env.ENGAGEMENT_TEST_RECIPIENT))return response(200,{enabled:false,sent:0});
  if(!process.env.RESEND_API_KEY||!process.env.EMAIL_UNSUBSCRIBE_SECRET)return response(503,{error:'emailConfigurationMissing'});
  const db=serviceClient();const {data:candidates,error}=await db.rpc('brains_engagement_candidates');
  if(error){console.error('engagement_candidates_failed',error.code);return response(503,{error:'database'});}
  let sent=0,failed=0,skipped=0;
  // The Hobby cron runs daily. Keep well below Resend's free daily quota, shared with Auth mail.
- for(const candidate of (candidates||[]).slice(0,20)){
+ for(const candidate of (candidates||[]).filter(candidate=>approvedTestRecipient(candidate.email)).slice(0,1)){
   if(!approvedTestRecipient(candidate.email)){skipped++;continue}
   const {data:message,error:claimError}=await db.rpc('brains_engagement_claim',{p_user_id:candidate.user_id,p_campaign:candidate.campaign,p_occurrence_key:candidate.occurrence_key});
   if(claimError){failed++;console.error('engagement_claim_failed',claimError.code);continue}
@@ -38,3 +40,4 @@ export async function GET(request){
  }
  return response(200,{enabled:true,candidates:(candidates||[]).length,sent,failed,skipped});
 }
+
