@@ -155,7 +155,8 @@ begin
   join brains_admin.email_preferences p on p.user_id=m.user_id and p.engagement_enabled
   where m.campaign='welcome' and m.occurrence_key='signup-confirmed'
     and (m.status='scheduled' or (m.status='retryable' and m.failed_at<=now()-interval '20 hours'))
-    and m.scheduled_at<=now() and u.email_confirmed_at is not null
+    and m.scheduled_at<=now() and m.scheduled_at>=now()-interval '48 hours'
+    and u.email_confirmed_at is not null
     and (u.banned_until is null or u.banned_until<now())
   union all
   select j.user_id,j.email::text,
@@ -187,7 +188,7 @@ begin
   where v.campaign<>'welcome'
  )
  select q.user_id,q.email,q.first_name,q.area_name,q.campaign,q.occurrence_key,q.pending_count,q.next_due
- from queue q order by q.priority,q.signup_at limit 50;
+ from queue q order by q.priority,q.signup_at limit 500;
 end $$;
 revoke all on function public.brains_engagement_candidates() from public,anon,authenticated;
 grant execute on function public.brains_engagement_candidates() to service_role;
