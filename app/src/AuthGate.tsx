@@ -17,7 +17,7 @@ export function AuthGate({children}:{children:ReactNode}){
  const [callbackError]=useState(()=>new URLSearchParams(window.location.hash.slice(1)).has('error')||new URLSearchParams(window.location.search).has('error'));
  useEffect(()=>{document.documentElement.lang=locale==='pt'?'pt-BR':locale},[locale]);
  useEffect(()=>{let active=true;if(!cloud)return()=>{active=false};
- const {data}=cloud.auth.onAuthStateChange((_event,session)=>{if(active){if(_event==='PASSWORD_RECOVERY')setRecovery(true);setUser(session?.user??null);setLoading(false);if(session?.user.email_confirmed_at&&session.access_token&&(_event==='SIGNED_IN'||_event==='INITIAL_SESSION'))void fetch('/api/engagement-welcome',{method:'POST',headers:{Authorization:'Bearer '+session.access_token}}).catch(()=>{/* Daily cron remains the fallback. */})}});
+ const {data}=cloud.auth.onAuthStateChange((_event,session)=>{if(active){if(_event==='PASSWORD_RECOVERY')setRecovery(true);setUser(session?.user??null);setLoading(false);if(session?.user.email_confirmed_at&&session.access_token&&(_event==='SIGNED_IN'||_event==='INITIAL_SESSION'))void fetch('/api/engagement-cron',{method:'POST',headers:{Authorization:'Bearer '+session.access_token}}).catch(()=>{/* Daily cron remains the fallback. */})}});
  return()=>{active=false;data.subscription.unsubscribe();cancelSpeech()};
  },[]);
  const redirect=!loading?accessRedirect(location.pathname,!!user,recovery,location.search):null;
