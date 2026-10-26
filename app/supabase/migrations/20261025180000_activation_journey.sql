@@ -12,7 +12,7 @@ create table if not exists brains_admin.email_messages (
  user_id uuid not null references auth.users(id) on delete cascade,
  campaign text not null check (campaign in ('welcome','first_card_72h','first_card_7d','review_pending','review_complete','reactivation')),
  occurrence_key text not null,
- status text not null check (status in ('scheduled','sending','sent','cancelled','failed','delivered','bounced','complained')),
+ status text not null check (status in ('scheduled','sending','sent','cancelled','failed','retryable','delivered','bounced','complained')),
  scheduled_at timestamptz not null,
  created_at timestamptz not null default now(),
  sent_at timestamptz,
@@ -66,7 +66,7 @@ grant execute on function public.brains_email_consent(boolean) to authenticated;
 -- Existing cards and reviews remain in brains_cloud and brains_admin.activity, without copies.
 alter table brains_admin.analytics_events drop constraint if exists analytics_events_event_name_check;
 alter table brains_admin.analytics_events add constraint analytics_events_event_name_check
- check(event_name in ('page_view','login_completed','area_created','deck_created','first_card_created','first_review_completed','review_session_completed'));
+ check(event_name in ('page_view','login_completed','area_created','deck_created','first_card_created','first_review_completed','first_card_celebrated','review_session_completed'));
 create unique index if not exists analytics_first_milestone_unique on brains_admin.analytics_events(user_id,event_name)
  where event_name in ('first_card_created','first_review_completed');
 
@@ -134,6 +134,22 @@ begin
 end $$;
 revoke all on function public.brains_review_session_completed(uuid) from public,anon;
 grant execute on function public.brains_review_session_completed(uuid) to authenticated;
+
+create or replace function public.brains_claim_first_card_celebration()
+returns boolean language plpgsql security definer set search_path='' as $$
+declare who uuid:=auth.uid(); inserted_rows bigint;
+begin
+ if who is null then raise exception 'authenticationRequired' using errcode='42501'; end if;
+ if not exists(select 1 from public.brains_cloud c where c.user_id=who
+  and jsonb_array_length(coalesce(c.document->'cards','[]'::jsonb))>0) then return false; end if;
+ insert into brains_admin.analytics_events(user_id,event_name,entity_id)
+ values(who,'first_card_celebrated','first-card')
+ on conflict(user_id,event_name,entity_id) where entity_id is not null do nothing;
+ get diagnostics inserted_rows = row_count;
+ return inserted_rows>0;
+end $$;
+revoke all on function public.brains_claim_first_card_celebration() from public,anon;
+grant execute on function public.brains_claim_first_card_celebration() to authenticated;
 
 -- Private read model: source timestamps are reused; unavailable history remains NULL.
 create or replace view brains_admin.user_journey as
@@ -257,7 +273,8 @@ begin
  select coalesce(jsonb_agg(to_jsonb(t) order by t.at_time desc,t.kind),'[]'::jsonb) into result from (
   select 'signup' kind,u.created_at at_time,null::text detail from auth.users u where u.id=p_user_id
   union all select a.event_name,a.created_at,null from brains_admin.activity a where a.user_id=p_user_id and a.created_at<=now()
-  union all select 'review_session_completed',e.created_at,null from brains_admin.analytics_events e where e.user_id=p_user_id and e.event_name='review_session_completed'
+  union all select e.event_name,e.created_at,null from brains_admin.analytics_events e
+   where e.user_id=p_user_id and e.event_name in ('review_session_completed','first_card_celebrated')
   union all select 'habit_consolidated',min(a.created_at),null from brains_admin.activity a
    join brains_admin.user_journey j on j.user_id=a.user_id
    where a.user_id=p_user_id and j.first_habit_day is not null and a.event_name in ('card_created','card_reviewed')
@@ -323,9 +340,9 @@ language sql stable security definer set search_path='' as $$
  ), eligible as (
   select s.*,
    case
-    when first_area_at is not null and first_card_at is null and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id and m.campaign='welcome' and m.status<>'cancelled') then 'welcome'
+    when first_area_at is not null and first_card_at is null and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id and m.campaign='welcome' and m.status not in ('cancelled','retryable')) then 'welcome'
     when first_area_at<=now()-interval '7 days' and first_card_at is null and (last_reengage_at is null or last_reengage_at<=now()-interval '7 days') then 'first_card_7d'
-    when first_area_at<=now()-interval '72 hours' and first_card_at is null and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id and m.campaign='first_card_72h' and m.status<>'cancelled') then 'first_card_72h'
+    when first_area_at<=now()-interval '72 hours' and first_card_at is null and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id and m.campaign='first_card_72h' and m.status not in ('cancelled','retryable')) then 'first_card_72h'
     when last_session_at>=now()-interval '24 hours' and next_due is not null and pending_count=0
       and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id and m.campaign='review_complete' and m.created_at>=s.last_session_at) then 'review_complete'
     when first_card_at is not null and first_habit_day is null and last_activity_at<=now()-interval '7 days'
@@ -365,8 +382,9 @@ begin
  end if;
  insert into brains_admin.email_messages(user_id,campaign,occurrence_key,status,scheduled_at,context)
  values(p_user_id,p_campaign,p_occurrence_key,'sending',now(),jsonb_build_object('area_name',candidate.area_name,'pending_count',candidate.pending_count,'next_due',candidate.next_due))
- on conflict(user_id,campaign,occurrence_key) do update set status='sending'
-  where brains_admin.email_messages.status='scheduled'
+ on conflict(user_id,campaign,occurrence_key) do update set status='sending',scheduled_at=now()
+  where brains_admin.email_messages.status='scheduled' or
+   (brains_admin.email_messages.status='retryable' and brains_admin.email_messages.failed_at<=now()-interval '20 hours')
  returning * into message;
  if message.id is null then return null; end if;
  return jsonb_build_object('id',message.id,'user_id',p_user_id,'email',candidate.email,'first_name',candidate.first_name,
@@ -382,6 +400,8 @@ begin
   update brains_admin.email_messages set status='sent',sent_at=coalesce(sent_at,now()),provider_id=p_provider_id where id=p_message_id and status='sending';
  elsif p_status='failed' then
   update brains_admin.email_messages set status='failed',failed_at=now() where id=p_message_id and status='sending';
+ elsif p_status='retryable' then
+  update brains_admin.email_messages set status='retryable',failed_at=now() where id=p_message_id and status='sending';
  end if;
 end $$;
 revoke all on function public.brains_engagement_mark(uuid,text,text) from public,anon,authenticated;

@@ -24,7 +24,7 @@ export async function GET(request){
   try{
    const provider=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${process.env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':`brains-${message.id}`},body:JSON.stringify({from:'Brains <no-reply@heybrains.app>',to:[message.email],subject:content.subject,html:content.html,text:content.text,headers:{'List-Unsubscribe':`<${unsubscribeUrl}>`}}),signal:AbortSignal.timeout(15000)});
    const payload=await provider.json().catch(()=>({}));
-   if(!provider.ok||!payload.id){failed++;if(provider.status>=400&&provider.status<500&&provider.status!==429)await db.rpc('brains_engagement_mark',{p_message_id:message.id,p_status:'failed'});console.error('engagement_provider_rejected',provider.status);continue}
+   if(!provider.ok||!payload.id){failed++;if(provider.status===429)await db.rpc('brains_engagement_mark',{p_message_id:message.id,p_status:'retryable'});else if(provider.status>=400&&provider.status<500)await db.rpc('brains_engagement_mark',{p_message_id:message.id,p_status:'failed'});console.error('engagement_provider_rejected',provider.status);continue}
    const marked=await db.rpc('brains_engagement_mark',{p_message_id:message.id,p_status:'sent',p_provider_id:payload.id});
    if(marked.error){failed++;console.error('engagement_mark_failed',marked.error.code);continue}
    sent++;
