@@ -19,7 +19,7 @@ import {Celebration} from './Celebration';
 import {EmailConsent} from './EmailConsent';
 import {cloud} from './cloud';
 import {recordEmailConversion} from './email-attribution';
-function recordEngagementConversion(stage:'area'|'card'|'review'|'session'){if(!cloud)return;try{void recordEmailConversion(stage,args=>cloud.rpc('brains_track_email_conversion',args),window.sessionStorage)}catch{/* Attribution never blocks study or account changes. */}}
+function recordEngagementConversion(stage:'area'|'card'|'review'|'session'){const client=cloud;if(!client)return;try{void recordEmailConversion(stage,args=>client.rpc('brains_track_email_conversion',args),window.sessionStorage)}catch{/* Attribution never blocks study or account changes. */}}
 type Page='home'|'decks'|'area'|'editor'|'settings'|'explore';
 type ChangeDialog={kind:'purge';id:string;type:'areas'|'cards'}|{kind:'area'|'deck';item?:Area|Deck}|{kind:'delete';type:'areas'|'decks'|'cards';id:string};
 export default function App(){
