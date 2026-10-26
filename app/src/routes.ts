@@ -11,7 +11,7 @@ export function productRoute(pathname:string):{page:'home'|'decks'|'area'|'setti
  return null;
 }
 function safeProductTarget(value:string|null){
- if(!value||!value.startsWith('/')||value.startsWith('//')||value.includes('\\\\'))return null;
+ if(!value||!value.startsWith('/')||value.startsWith('//')||value.includes('\\'))return null;
  let parsed:URL;try{parsed=new URL(value,'https://www.heybrains.app')}catch{return null}
  if(parsed.origin!=='https://www.heybrains.app'||!productRoute(parsed.pathname))return null;
  const query=new URLSearchParams();
@@ -21,13 +21,13 @@ function safeProductTarget(value:string|null){
  if(parsed.searchParams.get('createArea')==='1'&&route?.page==='decks')query.set('createArea','1');
  if(parsed.searchParams.get('createCard')==='1'&&route?.page==='area')query.set('createCard','1');
  if(parsed.searchParams.get('review')==='1'&&route?.page==='home')query.set('review','1');
- return parsed.pathname+(query.size?'?'+query.toString():'');
+ const qs=query.toString();return parsed.pathname+(qs?'?'+qs:'');
 }
 export function returnDestination(search=''){return safeProductTarget(new URLSearchParams(search).get('next'))}
 export function authCallback(search:string,hash:string){
  const query=new URLSearchParams(search),fragment=new URLSearchParams(hash.replace(/^#/,''));return query.get('auth')==='reset'||query.has('code')||query.has('error')||fragment.has('access_token')||fragment.has('error')||fragment.get('type')==='recovery';
 }
-export function authRedirect(origin:string,recovery=false,returnTo?:string){const query=new URLSearchParams();if(recovery)query.set('auth','reset');else{const target=safeProductTarget(returnTo??null);if(target)query.set('next',target)}return new URL(paths.login+(query.size?'?'+query.toString():''),origin).href}
+export function authRedirect(origin:string,recovery=false,returnTo?:string){const query=new URLSearchParams();if(recovery)query.set('auth','reset');else{const target=safeProductTarget(returnTo??null);if(target)query.set('next',target)}const qs=query.toString();return new URL(paths.login+(qs?'?'+qs:''),origin).href}
 export function consentDestination(search=''){
  const query=new URLSearchParams(search),id=query.get('authorization_id');
  return query.get('next')==='oauth'&&id&&/^[0-9a-f]{8}-[0-9a-f-]{27,40}$/i.test(id)?\`\${paths.oauthConsent}?authorization_id=\${encodeURIComponent(id)}\`:null;
