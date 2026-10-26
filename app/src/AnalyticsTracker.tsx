@@ -29,7 +29,7 @@ export function AnalyticsTracker({userId,ready}:{userId:string|null;ready:boolea
   const messageId=emailMessageFromSearch(location.search),path=trackedPath(location.pathname);
   if(!ready||!userId||!cloud||!messageId||!path)return;
   let active=true;
-  void cloud.rpc('brains_track_email_return',{p_message_id:messageId,p_path:path}).then(({error})=>{
+  void Promise.resolve(cloud.rpc('brains_track_email_return',{p_message_id:messageId,p_path:path})).then(({error})=>{
    if(!active||error)return;
    try{rememberEmailMessage(messageId,window.sessionStorage)}catch{/* Session storage is optional. */}
    const url=new URL(window.location.href);url.searchParams.delete('email_message_id');
