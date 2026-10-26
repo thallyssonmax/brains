@@ -5,11 +5,17 @@ import {emailContent} from './engagement-content.js';
 import {unsubscribeToken,verifyUnsubscribe,verifySvix} from './engagement-security.js';
 import {GET as runCron,approvedTestRecipient} from './engagement-cron.js';
 
-test('test sending accepts only the administrator email',()=>{
- assert.equal(approvedTestRecipient(' thallyssondesigner@gmail.com '),true);
- assert.equal(approvedTestRecipient('other@example.com'),false);
- assert.equal(approvedTestRecipient('thallyssondesigner@gmail.com.evil.test'),false);
- assert.equal(approvedTestRecipient(null),false);
+test('test sending accepts only the privately configured recipient',()=>{
+ const previous=process.env.ENGAGEMENT_TEST_RECIPIENT;
+ try{
+  delete process.env.ENGAGEMENT_TEST_RECIPIENT;
+  assert.equal(approvedTestRecipient('owner@example.test'),false);
+  process.env.ENGAGEMENT_TEST_RECIPIENT='owner@example.test';
+  assert.equal(approvedTestRecipient(' Owner@Example.Test '),true);
+  assert.equal(approvedTestRecipient('other@example.test'),false);
+  assert.equal(approvedTestRecipient('owner@example.test.evil.test'),false);
+  assert.equal(approvedTestRecipient(null),false);
+ }finally{if(previous===undefined)delete process.env.ENGAGEMENT_TEST_RECIPIENT;else process.env.ENGAGEMENT_TEST_RECIPIENT=previous}
 });
 
 test('unsubscribe tokens are signed and expire',()=>{
@@ -37,7 +43,7 @@ test('engagement email escapes user text and includes opt-out',()=>{
 test('cron refuses unauthenticated calls and stays off by default',async()=>{
  const previous=process.env.CRON_SECRET,enabled=process.env.ENGAGEMENT_ENABLED,approved=process.env.ENGAGEMENT_RELEASE_APPROVED;
  try{
-  process.env.CRON_SECRET='test-secret';process.env.ENGAGEMENT_ENABLED='true';delete process.env.ENGAGEMENT_RELEASE_APPROVED;
+  process.env.CRON_SECRET='test-secret';process.env.ENGAGEMENT_ENABLED='true';process.env.ENGAGEMENT_RELEASE_APPROVED='true';
   assert.equal((await runCron(new Request('https://www.heybrains.app/api/engagement-cron'))).status,401);
   const reply=await runCron(new Request('https://www.heybrains.app/api/engagement-cron',{headers:{Authorization:'Bearer test-secret'}}));
   assert.deepEqual(await reply.json(),{enabled:false,sent:0});
