@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createHmac} from 'node:crypto';
+import {createHash,createHmac} from 'node:crypto';
 import {emailContent} from './engagement-content.js';
 import {unsubscribeToken,verifyUnsubscribe,verifySvix} from './engagement-security.js';
 import {GET as runCron,approvedTestRecipient} from './engagement-cron.js';
@@ -11,7 +11,9 @@ test('test sending accepts only the privately configured recipient',()=>{
   delete process.env.ENGAGEMENT_TEST_RECIPIENT;
   assert.equal(approvedTestRecipient('owner@example.test'),false);
   process.env.ENGAGEMENT_TEST_RECIPIENT='owner@example.test';
-  assert.equal(approvedTestRecipient(' Owner@Example.Test '),true);
+  const testDigest=createHash('sha256').update('owner@example.test').digest('hex');
+  assert.equal(approvedTestRecipient(' Owner@Example.Test ',testDigest),true);
+  assert.equal(approvedTestRecipient('owner@example.test'),false);
   assert.equal(approvedTestRecipient('other@example.test'),false);
   assert.equal(approvedTestRecipient('owner@example.test.evil.test'),false);
   assert.equal(approvedTestRecipient(null),false);
@@ -49,3 +51,4 @@ test('cron refuses unauthenticated calls and stays off by default',async()=>{
   assert.deepEqual(await reply.json(),{enabled:false,sent:0});
  }finally{if(previous===undefined)delete process.env.CRON_SECRET;else process.env.CRON_SECRET=previous;if(enabled===undefined)delete process.env.ENGAGEMENT_ENABLED;else process.env.ENGAGEMENT_ENABLED=enabled;if(approved===undefined)delete process.env.ENGAGEMENT_RELEASE_APPROVED;else process.env.ENGAGEMENT_RELEASE_APPROVED=approved}
 });
+
