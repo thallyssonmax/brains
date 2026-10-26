@@ -16,7 +16,7 @@ describe('explicit email attribution',()=>{
   expect(currentEmailMessage(storage,101)).toBeNull();
  });
  it('records a user action against the explicit return message and tolerates failure',async()=>{
-  const storage=fakeStorage();rememberEmailMessage(id,storage,100);
+  const storage=fakeStorage();rememberEmailMessage(id,storage);
   const calls:{p_message_id:string;p_stage:string}[]=[];
   await recordEmailConversion('area',async args=>{calls.push(args);return {}},storage);
   expect(calls).toEqual([{p_message_id:id,p_stage:'area'}]);
