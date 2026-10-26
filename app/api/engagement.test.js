@@ -4,6 +4,7 @@ import {createHash,createHmac} from 'node:crypto';
 import {emailContent} from './engagement-content.js';
 import {unsubscribeToken,verifyUnsubscribe,verifySvix} from './engagement-security.js';
 import {GET as runCron,approvedTestRecipient} from './engagement-cron.js';
+import {handleWelcome} from './engagement-welcome.js';
 
 test('test sending accepts only the privately configured recipient',()=>{
  const previous=process.env.ENGAGEMENT_TEST_RECIPIENT;
@@ -73,4 +74,36 @@ test('first-card and review CTAs carry the relevant in-app action and area',()=>
  assert.match(card.url,new RegExp('/areas/'+id+'\\?createCard=1&email_message_id='));
  const review=emailContent({id,campaign:'review_pending',first_name:'Ana',pending_count:2},'https://www.heybrains.app/unsubscribe');
  assert.match(review.url,/\/home\?review=1&email_message_id=/);
+});
+
+test('immediate welcome requires a confirmed authenticated session',async()=>{
+ let serviceCalls=0;
+ const reply=await handleWelcome(new Request('https://www.heybrains.app/api/engagement-welcome',{method:'POST'}),{serviceClient:()=>{serviceCalls++;return {}}});
+ assert.equal(reply.status,401);
+ assert.equal(serviceCalls,0);
+});
+test('immediate welcome claims only the signed-in account and is idempotent',async()=>{
+ const user={id:'11111111-1111-1111-1111-111111111111',email:'test@example.test',email_confirmed_at:new Date().toISOString()};
+ let claimed=false,sends=0;
+ const db={rpc:async(name,args)=>{
+  if(name==='brains_engagement_candidates')return {data:[{user_id:user.id,campaign:'welcome',occurrence_key:'signup-confirmed'},{user_id:'22222222-2222-2222-2222-222222222222',campaign:'welcome'}],error:null};
+  if(name==='brains_engagement_claim'){assert.equal(args.p_user_id,user.id);assert.equal(args.p_campaign,'welcome');if(claimed)return {data:null,error:null};claimed=true;return {data:{id:'33333333-3333-3333-3333-333333333333',user_id:user.id,email:user.email,campaign:'welcome'},error:null}}
+  throw Error('unexpectedRpc');
+ }};
+ const deps={serviceClient:()=>db,verifyUser:async()=>({data:{user},error:null}),enabled:()=>true,approvedRecipient:()=>true,sendMessage:async()=>{sends++;return {status:'sent'}}};
+ const request=()=>new Request('https://www.heybrains.app/api/engagement-welcome',{method:'POST',headers:{Authorization:'Bearer verified-access-token-value'}});
+ assert.deepEqual(await (await handleWelcome(request(),deps)).json(),{enabled:true,sent:1});
+ assert.deepEqual(await (await handleWelcome(request(),deps)).json(),{enabled:true,sent:0});
+ assert.equal(sends,1);
+});
+test('immediate welcome never sends outside the authorized recipient',async()=>{
+ let rpcCalls=0,sends=0;
+ const db={rpc:async()=>{rpcCalls++;return {data:[],error:null}}};
+ const reply=await handleWelcome(new Request('https://www.heybrains.app/api/engagement-welcome',{method:'POST',headers:{Authorization:'Bearer verified-access-token-value'}}),{
+  serviceClient:()=>db,verifyUser:async()=>({data:{user:{id:'11111111-1111-1111-1111-111111111111',email:'other@example.test',email_confirmed_at:new Date().toISOString()}},error:null}),
+  enabled:()=>true,approvedRecipient:()=>false,sendMessage:async()=>{sends++;return {status:'sent'}}
+ });
+ assert.deepEqual(await reply.json(),{enabled:false,sent:0});
+ assert.equal(rpcCalls,0);
+ assert.equal(sends,0);
 });
