@@ -14,7 +14,7 @@ A primeira área só tem data quando o trigger de analytics já a capturou. Um v
 
 ## Comunicação
 
-O consentimento para e-mails de aprendizado é opt-in, separado dos e-mails essenciais de autenticação. O usuário pode desligá-lo em Configurações ou no link de descadastro. Bounces e reclamações desligam o consentimento. O Resend SMTP já usado pelo Supabase Auth continua independente; os novos envios de engajamento usam a API HTTP do Resend com chave de idempotência.
+O consentimento para e-mails de aprendizado é opt-in, separado dos e-mails essenciais de autenticação. No cadastro por e-mail, a caixa começa desmarcada e a escolha afirmativa é gravada com a conta; quem entra com Google pode ativá-la em Configurações. Usuários existentes começam sem consentimento nesta extensão. O usuário pode desligá-lo em Configurações ou no link de descadastro. Bounces e reclamações desligam o consentimento. O Resend SMTP já usado pelo Supabase Auth continua independente; os novos envios de engajamento usam a API HTTP do Resend com chave de idempotência.
 
 O cron da Vercel Hobby roda uma vez por dia, às 13:00 UTC (10:00 em Brasília), sujeito à precisão da plataforma. Ele reavalia elegibilidade imediatamente antes de enviar, limita a 20 mensagens por execução para preservar a cota gratuita compartilhada com a autenticação, aplica limite de um envio por usuário em 24 horas, três lembretes de revisão em sete dias e cooldown de sete dias para reengajamento. A ausência de consentimento, de configuração ou `ENGAGEMENT_ENABLED=false` resulta em zero envios. O webhook aceita somente assinatura Svix válida sobre o corpo original, grava eventos por ID de entrega e permite repetição sem duplicá-los.
 

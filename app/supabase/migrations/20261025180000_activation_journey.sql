@@ -7,6 +7,24 @@ create table if not exists brains_admin.email_preferences (
 alter table brains_admin.email_preferences enable row level security;
 revoke all on brains_admin.email_preferences from public, anon, authenticated;
 
+-- The email sign-up checkbox is unchecked by default. A failed preference write
+-- must never prevent the underlying Supabase Auth account from being created.
+create or replace function brains_admin.capture_signup_email_consent() returns trigger
+language plpgsql security definer set search_path='' as $$
+begin
+ if new.raw_user_meta_data->>'brains_engagement_opt_in'='true' then
+  insert into brains_admin.email_preferences(user_id,engagement_enabled)
+  values(new.id,true) on conflict(user_id) do nothing;
+ end if;
+ return new;
+exception when others then
+ raise log 'Brains signup consent capture failed (SQLSTATE %)',sqlstate;
+ return new;
+end $$;
+revoke all on function brains_admin.capture_signup_email_consent() from public,anon,authenticated;
+create trigger brains_signup_email_consent after insert on auth.users
+for each row execute function brains_admin.capture_signup_email_consent();
+
 create table if not exists brains_admin.email_messages (
  id uuid primary key default gen_random_uuid(),
  user_id uuid not null references auth.users(id) on delete cascade,
@@ -116,6 +134,26 @@ end $$;
 revoke all on function brains_admin.capture_first_milestones() from public,anon,authenticated;
 create trigger brains_activation_milestones after insert or update of document on public.brains_cloud
 for each row execute function brains_admin.capture_first_milestones();
+
+-- Preserve the earliest *recorded* milestone for existing libraries. Skip invalid or
+-- missing timestamps instead of assigning an invented historical date.
+insert into brains_admin.analytics_events(user_id,event_name,entity_id,created_at)
+select user_id,'first_card_created',entity_id,at_time from (
+ select c.user_id,x->>'id' entity_id,brains_admin.safe_time(x->>'createdAt') at_time,
+  row_number() over(partition by c.user_id order by brains_admin.safe_time(x->>'createdAt') nulls last,x->>'id') milestone_rank
+ from public.brains_cloud c cross join lateral jsonb_array_elements(coalesce(c.document->'cards','[]'::jsonb)) x
+ where x->>'id' is not null
+) first_card where milestone_rank=1 and at_time is not null
+on conflict do nothing;
+
+insert into brains_admin.analytics_events(user_id,event_name,entity_id,created_at)
+select user_id,'first_review_completed',entity_id,at_time from (
+ select c.user_id,x->>'id' entity_id,brains_admin.safe_time(x->>'at') at_time,
+  row_number() over(partition by c.user_id order by brains_admin.safe_time(x->>'at') nulls last,x->>'id') milestone_rank
+ from public.brains_cloud c cross join lateral jsonb_array_elements(coalesce(c.document->'reviews','[]'::jsonb)) x
+ where x->>'id' is not null
+) first_review where milestone_rank=1 and at_time is not null
+on conflict do nothing;
 
 -- A session is reported only after its last review has been persisted. Never grant arbitrary event insertion.
 create or replace function public.brains_review_session_completed(p_session_id uuid)
@@ -341,7 +379,10 @@ language sql stable security definer set search_path='' as $$
   select s.*,
    case
     when first_area_at is not null and first_card_at is null and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id and m.campaign='welcome' and m.status not in ('cancelled','retryable')) then 'welcome'
-    when first_area_at<=now()-interval '7 days' and first_card_at is null and (last_reengage_at is null or last_reengage_at<=now()-interval '7 days') then 'first_card_7d'
+    when first_area_at<=now()-interval '7 days' and first_card_at is null
+      and (last_activity_at is null or last_activity_at<=now()-interval '7 days')
+      and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id
+       and m.campaign='first_card_7d' and m.status not in ('cancelled','retryable')) then 'first_card_7d'
     when first_area_at<=now()-interval '72 hours' and first_card_at is null and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id and m.campaign='first_card_72h' and m.status not in ('cancelled','retryable')) then 'first_card_72h'
     when last_session_at>=now()-interval '24 hours' and next_due is not null and pending_count=0
       and not exists(select 1 from brains_admin.email_messages m where m.user_id=s.user_id and m.campaign='review_complete' and m.created_at>=s.last_session_at) then 'review_complete'
