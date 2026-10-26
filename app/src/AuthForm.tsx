@@ -5,7 +5,7 @@ import type {Locale} from './model';
 import {authTexts} from './auth-texts';
 import {submitAuth,authErrorKey,type AuthMode} from './auth-actions';
 export function AuthForm({locale,recovery=false,onRecovered,callbackError=false,oauthRedirectTo}:{locale:Locale;recovery?:boolean;onRecovered:()=>void;callbackError?:boolean;oauthRedirectTo?:string}){
- const t=authTexts[locale];const [mode,setMode]=useState<AuthMode>(recovery?'reset':'login');const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[confirm,setConfirm]=useState(''),[engagementOptIn,setEngagementOptIn]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState<keyof typeof t|''>(callbackError?'callbackError':''),[message,setMessage]=useState<keyof typeof t|''>(''),[google,setGoogle]=useState(false),[signupAllowed,setSignupAllowed]=useState(true);const locked=useRef(false);
+ const t=authTexts[locale];const [mode,setMode]=useState<AuthMode>(recovery?'reset':'login');const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[confirm,setConfirm]=useState(''),[engagementOptIn,setEngagementOptIn]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState<keyof typeof t|''>(callbackError?'callbackError':''),[message,setMessage]=useState<keyof typeof t|''>(''),[google,setGoogle]=useState(false),[signupAllowed,setSignupAllowed]=useState(true);const locked=useRef(false);
  useEffect(()=>{let live=true;void publicAuthSettings().then(settings=>{if(live){setGoogle(!!settings.external?.google);setSignupAllowed(!settings.disable_signup)}}).catch(()=>{});return()=>{live=false}},[]);
  useEffect(()=>{if(recovery)setMode('reset')},[recovery]);
  function change(next:AuthMode){setMode(next);setPassword('');setConfirm('');setError('');setMessage('')}
@@ -23,4 +23,5 @@ export function AuthForm({locale,recovery=false,onRecovered,callbackError=false,
  {(error==='unconfirmed'||message==='sent')&&<button className="text-btn" disabled={busy} onClick={()=>void run(async()=>{const {error}=await cloud!.auth.resend({type:'signup',email:email.trim(),options:{emailRedirectTo:authRedirect(window.location.origin)}});if(error)throw error;setMessage('sent')})}>{t.resend}</button>}
  <div className="auth-links">{mode==='login'?<><button className="text-btn" disabled={busy} onClick={()=>change('forgot')}>{t.forgotLink}</button>{signupAllowed&&<button className="text-btn" disabled={busy} onClick={()=>change('signup')}>{t.signupLink}</button>}</>:mode==='reset'?<button className="text-btn" disabled={busy} onClick={onRecovered}>{t.cancel}</button>:<button className="text-btn" disabled={busy} onClick={()=>change('login')}>{mode==='signup'?t.loginLink:t.back}</button>}</div></section>;
 }
+
 
