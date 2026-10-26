@@ -10,7 +10,7 @@ export function currentEmailMessage(storage:StorageLike,now=Date.now()){
  try{const value=storage.getItem(storageKey);if(!value)return null;const record=JSON.parse(value) as {id?:unknown;expiresAt?:unknown};if(typeof record.id!=='string'||!isUuid(record.id)||typeof record.expiresAt!=='number'||record.expiresAt<=now){storage.removeItem?.(storageKey);return null}return record.id}catch{return null}
 }
 export function clearEmailMessage(storage:StorageLike){try{storage.removeItem?.(storageKey)}catch{/* Session storage is optional. */}}
-export async function recordEmailConversion(stage:'area'|'card'|'review'|'session',rpc:(args:{p_message_id:string;p_stage:string})=>Promise<{error?:unknown}>,storage:StorageLike){
+export async function recordEmailConversion(stage:'area'|'card'|'review'|'session',rpc:(args:{p_message_id:string;p_stage:string})=>PromiseLike<{error?:unknown}>,storage:StorageLike){
  const id=currentEmailMessage(storage);if(!id)return;
  try{await rpc({p_message_id:id,p_stage:stage})}catch{/* Attribution never blocks the study flow. */}
 }
