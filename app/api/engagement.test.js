@@ -52,3 +52,25 @@ test('cron refuses unauthenticated calls and stays off by default',async()=>{
  }finally{if(previous===undefined)delete process.env.CRON_SECRET;else process.env.CRON_SECRET=previous;if(enabled===undefined)delete process.env.ENGAGEMENT_ENABLED;else process.env.ENGAGEMENT_ENABLED=enabled;if(approved===undefined)delete process.env.ENGAGEMENT_RELEASE_APPROVED;else process.env.ENGAGEMENT_RELEASE_APPROVED=approved}
 });
 
+
+test('welcome is tied to confirmation and links to Today with explicit attribution',()=>{
+ const messageId='f0837cd4-1111-4444-9999-ffeabcabcdef';
+ const message=emailContent({id:messageId,campaign:'welcome',first_name:'Ana'},'https://www.heybrains.app/unsubscribe');
+ assert.match(message.subject,/Bem-vindo ao Brains/);
+ assert.match(message.preheader,/Crie sua área/);
+ assert.match(message.url,/\/home\?email_message_id=/);
+ assert.match(message.html,/Sua conta está confirmada/);
+ assert.doesNotMatch(message.url,/\/areas/);
+});
+test('first-area CTA opens the existing create-area action',()=>{
+ const message=emailContent({id:'f0837cd4-1111-4444-9999-ffeabcabcdef',campaign:'first_area_48h',first_name:'Ana'},'https://www.heybrains.app/unsubscribe');
+ assert.match(message.subject,/cantinho de estudos/);
+ assert.match(message.url,/\/areas\?createArea=1&email_message_id=/);
+});
+test('first-card and review CTAs carry the relevant in-app action and area',()=>{
+ const id='f0837cd4-1111-4444-9999-ffeabcabcdef';
+ const card=emailContent({id,campaign:'first_card_72h',first_name:'Ana',area_id:id},'https://www.heybrains.app/unsubscribe');
+ assert.match(card.url,new RegExp('/areas/'+id+'\\?createCard=1&email_message_id='));
+ const review=emailContent({id,campaign:'review_pending',first_name:'Ana',pending_count:2},'https://www.heybrains.app/unsubscribe');
+ assert.match(review.url,/\/home\?review=1&email_message_id=/);
+});
