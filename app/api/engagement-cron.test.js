@@ -1,5 +1,5 @@
 import {afterEach,expect,it,vi} from 'vitest';
-import {approvedTestRecipient,engagementSendingEnabled} from './engagement-cron.js';
+import {approvedTestRecipient,dailyPilotCandidates,engagementSendingEnabled} from './engagement-cron.js';
 
 afterEach(()=>vi.unstubAllEnvs());
 
@@ -28,11 +28,13 @@ it('keeps the test release gated by an approved configured pilot',()=>{
  expect(engagementSendingEnabled()).toBe(false);
 });
 
-it('limits recipients to one message per pilot in the daily run',()=>{
- // Recipient filtering and daily deduplication are covered at the cron boundary in production.
- // The primitive must recognize exactly the two configured pilot identities.
+it('selects no more than one daily message per pilot account',()=>{
  vi.stubEnv('ENGAGEMENT_TEST_RECIPIENT','heeybrains@gmail.com');
- const candidates=['heeybrains@gmail.com','thallyssondesigner@gmail.com','heeybrains@gmail.com','someone@example.com'];
- const uniquePilots=[...new Set(candidates.filter(approvedTestRecipient))];
- expect(uniquePilots).toEqual(['heeybrains@gmail.com','thallyssondesigner@gmail.com']);
+ const candidates=[
+  {email:'heeybrains@gmail.com',campaign:'welcome'},
+  {email:'heeybrains@gmail.com',campaign:'review_pending'},
+  {email:'thallyssondesigner@gmail.com',campaign:'reactivation'},
+  {email:'someone@example.com',campaign:'welcome'},
+ ];
+ expect(dailyPilotCandidates(candidates)).toEqual([candidates[0],candidates[2]]);
 });
