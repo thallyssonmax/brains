@@ -4,11 +4,18 @@ import {equalSecret} from './engagement-security.js';
 import {sendEngagementMessage} from '../engagement-send.js';
 
 const response=(status,body)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
-// The owner authorized a test for one account. General release remains locked.
+// The owner authorized tests for two pilot accounts. General release remains locked.
 export const ENGAGEMENT_RELEASE_UNLOCKED=false;
 export const ENGAGEMENT_TEST_RELEASE_UNLOCKED=true;
-const TEST_RECIPIENT_SHA256='a01b27204b7093a8c41416d9ed64d519c5a6994382880f93628a8ca2ca5c40b3';
-export const approvedTestRecipient=(email,allowedDigest=TEST_RECIPIENT_SHA256)=>typeof email==='string'&&typeof process.env.ENGAGEMENT_TEST_RECIPIENT==='string'&&process.env.ENGAGEMENT_TEST_RECIPIENT.trim()!==''&&email.trim().toLowerCase()===process.env.ENGAGEMENT_TEST_RECIPIENT.trim().toLowerCase()&&createHash('sha256').update(email.trim().toLowerCase()).digest('hex')===allowedDigest;
+const TEST_RECIPIENT_SHA256S=Object.freeze(['a01b27204b7093a8c41416d9ed64d519c5a6994382880f93628a8ca2ca5c40b3','8ffdb8f6a3d1b9e4e40bc4bbdf293f1249301bea5bacee3f9abfa1918597bb6d']);
+export const approvedTestRecipient=(email,allowedDigests=TEST_RECIPIENT_SHA256S)=>{
+ const configured=process.env.ENGAGEMENT_TEST_RECIPIENT;
+ if(typeof configured!=='string'||configured.trim()===''||typeof email!=='string')return false;
+ const configuredDigest=createHash('sha256').update(configured.trim().toLowerCase()).digest('hex');
+ const recipientDigest=createHash('sha256').update(email.trim().toLowerCase()).digest('hex');
+ const approved=Array.isArray(allowedDigests)?allowedDigests:[allowedDigests];
+ return TEST_RECIPIENT_SHA256S.includes(configuredDigest)&&approved.includes(recipientDigest);
+};
 export function serviceClient(){const url=process.env.SUPABASE_URL||process.env.VITE_SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw Error('serviceConfigurationMissing');return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}})}
 export function engagementSendingEnabled(){return ENGAGEMENT_TEST_RELEASE_UNLOCKED&&process.env.ENGAGEMENT_ENABLED==='true'&&process.env.ENGAGEMENT_RELEASE_APPROVED==='true'&&approvedTestRecipient(process.env.ENGAGEMENT_TEST_RECIPIENT)}
 
@@ -19,8 +26,15 @@ export async function GET(request){
  const db=serviceClient();const {data:candidates,error}=await db.rpc('brains_engagement_candidates');
  if(error){console.error('engagement_candidates_failed',error.code);return response(503,{error:'database'});}
  let sent=0,failed=0,skipped=0;
- // The Hobby cron runs daily. Keep well below Resend's free daily quota, shared with Auth mail.
- for(const candidate of (candidates||[]).filter(candidate=>approvedTestRecipient(candidate.email)).slice(0,1)){
+ // The Hobby cron runs daily. Allow at most one message per pilot and two total, below Resend's free daily quota shared with Auth mail.
+ const dailyCandidates=[];const seenRecipients=new Set();
+ for(const candidate of candidates||[]){
+  const recipient=typeof candidate.email==='string'?candidate.email.trim().toLowerCase():'';
+  if(!approvedTestRecipient(recipient)||seenRecipients.has(recipient))continue;
+  seenRecipients.add(recipient);dailyCandidates.push(candidate);
+  if(dailyCandidates.length===2)break;
+ }
+ for(const candidate of dailyCandidates){
   if(!approvedTestRecipient(candidate.email)){skipped++;continue}
   const {data:message,error:claimError}=await db.rpc('brains_engagement_claim',{p_user_id:candidate.user_id,p_campaign:candidate.campaign,p_occurrence_key:candidate.occurrence_key});
   if(claimError){failed++;console.error('engagement_claim_failed',claimError.code);continue}
