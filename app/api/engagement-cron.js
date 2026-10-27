@@ -16,6 +16,16 @@ export const approvedTestRecipient=(email,allowedDigests=TEST_RECIPIENT_SHA256S)
  const approved=Array.isArray(allowedDigests)?allowedDigests:[allowedDigests];
  return TEST_RECIPIENT_SHA256S.includes(configuredDigest)&&approved.includes(recipientDigest);
 };
+export function dailyPilotCandidates(candidates,limit=2){
+ const selected=[];const seen=new Set();
+ for(const candidate of candidates||[]){
+  const recipient=typeof candidate.email==='string'?candidate.email.trim().toLowerCase():'';
+  if(!approvedTestRecipient(recipient)||seen.has(recipient))continue;
+  seen.add(recipient);selected.push(candidate);
+  if(selected.length>=limit)break;
+ }
+ return selected;
+}
 export function serviceClient(){const url=process.env.SUPABASE_URL||process.env.VITE_SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw Error('serviceConfigurationMissing');return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}})}
 export function engagementSendingEnabled(){return ENGAGEMENT_TEST_RELEASE_UNLOCKED&&process.env.ENGAGEMENT_ENABLED==='true'&&process.env.ENGAGEMENT_RELEASE_APPROVED==='true'&&approvedTestRecipient(process.env.ENGAGEMENT_TEST_RECIPIENT)}
 
@@ -27,14 +37,7 @@ export async function GET(request){
  if(error){console.error('engagement_candidates_failed',error.code);return response(503,{error:'database'});}
  let sent=0,failed=0,skipped=0;
  // The Hobby cron runs daily. Allow at most one message per pilot and two total, below Resend's free daily quota shared with Auth mail.
- const dailyCandidates=[];const seenRecipients=new Set();
- for(const candidate of candidates||[]){
-  const recipient=typeof candidate.email==='string'?candidate.email.trim().toLowerCase():'';
-  if(!approvedTestRecipient(recipient)||seenRecipients.has(recipient))continue;
-  seenRecipients.add(recipient);dailyCandidates.push(candidate);
-  if(dailyCandidates.length===2)break;
- }
- for(const candidate of dailyCandidates){
+ for(const candidate of dailyPilotCandidates(candidates)){
   if(!approvedTestRecipient(candidate.email)){skipped++;continue}
   const {data:message,error:claimError}=await db.rpc('brains_engagement_claim',{p_user_id:candidate.user_id,p_campaign:candidate.campaign,p_occurrence_key:candidate.occurrence_key});
   if(claimError){failed++;console.error('engagement_claim_failed',claimError.code);continue}
