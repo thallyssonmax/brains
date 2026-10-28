@@ -10,8 +10,8 @@ function fixture(){
  let row={version:3,document:structuredClone(library)};const saved=[];
  return {saved,store:{async read(){return structuredClone(row)},async save(version,operationId,document){if(version!==row.version)throw Error('CONFLICT');row={version:version+1,document:structuredClone(document)};saved.push({version,operationId,document:structuredClone(document)});return row}},get row(){return row}};
 }
-async function withClient(store,fn){
- const server=createImportServer(store),client=new Client({name:'brains-test',version:'1.0.0'});
+async function withClient(store,fn,account={id:'brains-user-1',email:'learner@example.com'}){
+ const server=createImportServer(store,account),client=new Client({name:'brains-test',version:'1.0.0'});
  const [a,b]=InMemoryTransport.createLinkedPair();
  try{await server.connect(b);await client.connect(a);return await fn(client)}finally{await client.close();await server.close()}
 }
@@ -32,11 +32,31 @@ describe('authenticated Brains card tools',()=>{
 
  it('exposes only area listing and an explicitly approved text-card writer',async()=>withClient(fixture().store,async client=>{
   const {tools}=await client.listTools();
-  expect(tools.map(tool=>tool.name)).toEqual(['list_areas','create_flashcards']);
-  expect(tools[1].inputSchema.properties).not.toHaveProperty('file');
-  expect(tools[1].annotations).toMatchObject({readOnlyHint:false,destructiveHint:false});
+  expect(tools.map(tool=>tool.name)).toEqual(['get_connected_account','list_areas','create_flashcards']);
+  expect(tools[2].inputSchema.properties).not.toHaveProperty('file');
+  expect(tools[2].annotations).toMatchObject({readOnlyHint:false,destructiveHint:false});
  }));
 
+ it('identifies the authenticated account without exposing library data',async()=>{
+  const db=fixture();
+  await withClient(db.store,async client=>{
+   const result=await client.callTool({name:'get_connected_account',arguments:{}});
+   expect(result.structuredContent.account).toEqual({accountId:'brains-user-1',email:'learner@example.com'});
+   expect(result.content[0].text).toContain('learner@example.com');
+   expect(result.content[0].text).not.toContain('English');
+  });
+ });
+ it('returns a different account profile for each authenticated connection',async()=>{
+  const first=fixture(),second=fixture();
+  await withClient(first.store,async client=>{
+   const result=await client.callTool({name:'get_connected_account',arguments:{}});
+   expect(result.structuredContent.account.email).toBe('first@example.com');
+  },{id:'user-first',email:'first@example.com'});
+  await withClient(second.store,async client=>{
+   const result=await client.callTool({name:'get_connected_account',arguments:{}});
+   expect(result.structuredContent.account.email).toBe('second@example.com');
+  },{id:'user-second',email:'second@example.com'});
+ });
  it('lists only active areas and does not return cards or review history',async()=>{
   const db=fixture();
   db.row.document.areas.push({id:'area-trash',name:'Deleted',archived:false,deleted:true});
