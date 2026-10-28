@@ -4,14 +4,14 @@ Atualizado em 28/10/2026. Consulte a [especificação da integração](Brains-Ch
 
 ## Estado atual
 
-O conector OAuth de cards de texto está publicado em `https://www.heybrains.app/api/brains-mcp-import`. Ele é separado do plugin público de rascunhos e imagens, que usa `/api/brains-mcp-prepare`. O conector exige uma conta Brains autorizada; cada chamada fica limitada à conexão autenticada pelo token Supabase e pelas políticas RLS. A ferramenta `get_connected_account` ajuda o ChatGPT a identificar essa conexão. Nenhum schema ou migration é necessário para a seleção de múltiplas contas.
+O conector OAuth de cards de texto está publicado em `https://www.heybrains.app/api/brains-mcp-import`. Ele é separado do plugin público de rascunhos e imagens, que usa `/api/brains-mcp-prepare`. O conector exige uma conta Brains autorizada; cada chamada fica limitada à conexão autenticada pelo token Supabase e pelas políticas RLS. Sempre que você perguntar qual conta está conectada, o ChatGPT consulta `get_connected_account` e informa o e-mail ou, se ausente, o ID estável. A ferramenta não acessa outras contas. Nenhum schema ou migration é necessário para a seleção de múltiplas contas.
 
 ## Conectar e selecionar contas
 
 1. No ChatGPT, abra **Configurações → Plugins ou Apps → Brains**.
 2. Em **Contas conectadas**, escolha **Conectar outra conta**, se essa opção estiver disponível.
 3. Autorize a conta Brains desejada pelo fluxo OAuth.
-4. Ao pedir cards para uma conta específica, informe o e-mail da conta. O ChatGPT consulta `get_connected_account` para confirmar qual conexão está sendo usada antes de listar áreas ou criar cards.
+4. Para identificar a conexão, pergunte qual conta está conectada: o ChatGPT consulta `get_connected_account` e informa o e-mail ou ID estável. Ao pedir cards para uma conta específica, informe o e-mail desejado; o ChatGPT confirma se a conexão selecionada corresponde a ela antes de listar áreas ou criar cards.
 5. Se a opção de conectar outra conta não aparecer, use a conexão disponível ou consulte a disponibilidade no ChatGPT; o MCP não consegue adicionar nem alternar contas por conta própria.
 
 ## Segurança e comportamento
