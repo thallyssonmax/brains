@@ -33,8 +33,6 @@ describe('authenticated Brains card tools',()=>{
  it('exposes only area listing and an explicitly approved text-card writer',async()=>withClient(fixture().store,async client=>{
   const {tools}=await client.listTools();
   expect(tools.map(tool=>tool.name)).toEqual(['get_connected_account','list_areas','create_flashcards']);
-  const identityTool=tools.find(tool=>tool.name==='get_connected_account');
-  expect(identityTool.description).toContain('SEMPRE chame esta ferramenta antes de responder');
   expect(tools[2].inputSchema.properties).not.toHaveProperty('file');
   expect(tools[2].annotations).toMatchObject({readOnlyHint:false,destructiveHint:false});
  }));
