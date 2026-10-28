@@ -9,6 +9,11 @@ const MAX_BATCH=20;
 
 const canonical=value=>value.normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase();
 
+function activeCardsForArea(library,areaId){
+ const deckIds=new Set(library.decks.filter(deck=>deck.areaId===areaId&&!deck.deleted&&!deck.archived).map(deck=>deck.id));
+ return library.cards.filter(card=>deckIds.has(card.deckId)&&!card.deleted&&!card.archived);
+}
+
 function flashcard(deck,front,back,now=new Date().toISOString()){
  return {
   id:crypto.randomUUID(),deckId:deck.id,
@@ -34,7 +39,7 @@ function errorResult(error){
 }
 
 export function createImportServer(store){
- const server=new McpServer({name:'brains-flashcard-import',title:'Brains — Criar flashcard',version:'0.3.1',websiteUrl:APP_ORIGIN,description:'Crie cards de texto no Brains depois de aprovar o conteúdo nesta conversa.',icons:[{src:`${APP_ORIGIN}/brains-plugin-logo-v1.svg`,mimeType:'image/svg+xml',sizes:['256x256']}]},{instructions:'This MCP is connected to the signed-in Brains account. First call list_areas when the target area is not clear, and ask the user to choose if there is ambiguity. Draft the front and back in the conversation, show the exact card content and target area, and wait for the user to explicitly approve before calling create_flashcards. Never infer approval from the original request to create a proposal. Save only the exact approved text. This integration does not transfer images or audio files. Cards use Brains reference voice playback on both sides; microphone recordings are made in the Brains app.'});
+ const server=new McpServer({name:'brains-flashcard-import',title:'Brains — Criar flashcard',version:'0.3.2',websiteUrl:APP_ORIGIN,description:'Crie cards de texto no Brains depois de aprovar o conteúdo nesta conversa.',icons:[{src:`${APP_ORIGIN}/brains-plugin-logo-v1.svg`,mimeType:'image/svg+xml',sizes:['256x256']}]},{instructions:'This MCP is connected to the signed-in Brains account. First call list_areas when the target area is not clear, and ask the user to choose if there is ambiguity. Draft the front and back in the conversation, show the exact card content and target area, and wait for the user to explicitly approve before calling create_flashcards. Never infer approval from the original request to create a proposal. Save only the exact approved text. This integration does not transfer images or audio files. Cards use Brains reference voice playback on both sides; microphone recordings are made in the Brains app.'});
 
  server.registerTool('list_areas',{
   title:'Listar áreas do Brains',
@@ -50,7 +55,7 @@ export function createImportServer(store){
    const areas=library.areas.filter(area=>!area.deleted&&!area.archived).flatMap(area=>{
     const decks=library.decks.filter(deck=>deck.areaId===area.id&&!deck.deleted&&!deck.archived);
     if(!decks.length)return [];
-    return [{id:area.id,name:area.name,language:decks[0].language,cardCount:library.cards.filter(card=>decks.some(deck=>deck.id===card.deckId)&&!card.deleted).length}];
+    return [{id:area.id,name:area.name,language:decks[0].language,cardCount:activeCardsForArea(library,area.id).length}];
    });
    return {structuredContent:{areas},content:[{type:'text',text:areas.length?JSON.stringify(areas):'Nenhuma área ativa foi encontrada. Crie uma área no Brains antes de importar cards.'}]};
   }catch(error){return errorResult(error)}
@@ -79,7 +84,7 @@ export function createImportServer(store){
     const deck=decks[0];
     if(!deck)throw Error('MISSING_AREA');
     const seen=new Map();
-    for(const card of library.cards.filter(item=>decks.some(itemDeck=>itemDeck.id===item.deckId))){
+    for(const card of activeCardsForArea(library,area.id)){
      const front=canonical(card.front.text),back=canonical(card.back.text);
      if(!seen.has(front))seen.set(front,new Set());seen.get(front).add(back);
     }

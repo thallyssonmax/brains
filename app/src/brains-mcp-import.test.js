@@ -1,3 +1,5 @@
+import {webcrypto} from 'node:crypto';
+globalThis.crypto??=webcrypto;
 import {describe,it,expect} from 'vitest';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
@@ -44,6 +46,42 @@ describe('authenticated Brains card tools',()=>{
   });
  });
 
+ it('counts only active cards and allows recreating a trashed card without changing history',async()=>{
+  const db=fixture();
+  const trashed={id:'old-card',deckId:'deck-en',front:{text:'to become'},back:{text:'I want to become fluent in English.'},archived:false,deleted:true,memory:{due:'2026-02-01T00:00:00.000Z'}};
+  db.row.document.cards.push(trashed);
+  db.row.document.reviews=[{id:'old-review',cardId:'old-card',known:true,at:'2026-01-02T00:00:00.000Z'}];
+  const original=structuredClone(db.row.document);
+  await withClient(db.store,async client=>{
+   const areas=await client.callTool({name:'list_areas',arguments:{}});
+   expect(areas.structuredContent.areas[0].cardCount).toBe(0);
+   const result=await client.callTool({name:'create_flashcards',arguments:{areaId:'area-en',cards:[{front:'to become',back:'I want to become fluent in English.'}]}});
+   expect(result.structuredContent).toMatchObject({saved:true,areaName:'English',count:1});
+  });
+  const updated=db.saved[0].document;
+  expect(updated.cards[0]).toEqual(original.cards[0]);
+  expect(updated.cards[1].id).not.toBe(trashed.id);
+  expect(updated.reviews).toEqual(original.reviews);
+ });
+ it('isolates duplicate checks by account and selected area',async()=>{
+  const accountA=fixture();
+  accountA.row.document.cards.push({id:'account-a-card',deckId:'deck-en',front:{text:'to become'},back:{text:'I want to become fluent in English.'},archived:false,deleted:false});
+  const accountB=fixture();
+  accountB.row.document.areas.push({id:'area-es',name:'Español',archived:false,deleted:false});
+  accountB.row.document.decks.push({id:'deck-es',areaId:'area-es',name:'Español',language:'es-ES',archived:false,deleted:false});
+  accountB.row.document.cards.push({id:'other-area-card',deckId:'deck-es',front:{text:'to become'},back:{text:'I want to become fluent in English.'},archived:false,deleted:false});
+  await withClient(accountA.store,async client=>{
+   const result=await client.callTool({name:'create_flashcards',arguments:{areaId:'area-en',cards:[{front:'to become',back:'I want to become fluent in English.'}]}});
+   expect(result.isError).toBe(true);
+   expect(result.content[0].text).toContain('DUPLICATE_CARD');
+  });
+  await withClient(accountB.store,async client=>{
+   const result=await client.callTool({name:'create_flashcards',arguments:{areaId:'area-en',cards:[{front:'to become',back:'I want to become fluent in English.'}]}});
+   expect(result.structuredContent).toMatchObject({saved:true,areaName:'English',count:1});
+  });
+  expect(accountA.saved).toHaveLength(0);
+  expect(accountB.saved).toHaveLength(1);
+ });
  it('saves only the approved front and back while preserving existing cards and history',async()=>{
   const db=fixture();
   db.row.document.cards.push({id:'old',deckId:'deck-en',front:{text:'Existing',mode:'reference',language:'en-US',audioText:''},back:{text:'An existing card.',mode:'reference',language:'pt-BR',audioText:''},version:2,createdAt:'2026-01-01T00:00:00.000Z',updatedAt:'2026-01-01T00:00:00.000Z',archived:false,deleted:false,memory:{due:'2026-02-01T00:00:00.000Z'}});
