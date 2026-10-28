@@ -14,6 +14,7 @@ Status do pacote: 1.2.0 · endpoint: `https://www.heybrains.app/api/brains-mcp-p
 - Suporte web: `https://www.heybrains.app/support/`
 - Repositório público: `https://github.com/thallyssonmax/brains`
 - Endpoint MCP publicado: `https://www.heybrains.app/api/brains-mcp-prepare`
+- Metadados do pacote incluem os links de suporte, privacidade e termos e os 5 casos positivos + 3 negativos.
 
 O pacote público oferece apenas preparação de rascunho. A rota OAuth separada do domínio não está referenciada no manifest do plugin.
 
@@ -33,10 +34,11 @@ O pacote público oferece apenas preparação de rascunho. A rota OAuth separada
 
 ## Materiais e ações que ainda dependem do responsável
 
-- Gravar e hospedar uma demonstração curta no fluxo real do ChatGPT e do Brains; inserir a URL pública solicitada pelo formulário de revisão.
+- Gravar e hospedar uma demonstração curta no fluxo real do ChatGPT e do Brains; inserir a URL pública solicitada pelo formulário de revisão. A URL ainda não está no pacote.
 - Concluir a verificação de identidade/organização no OpenAI Platform.
-- Verificar o domínio `heybrains.app` com o desafio fornecido pelo formulário do OpenAI Platform.
-- Criar uma conta de demonstração isolada, sem dados pessoais, e inserir as credenciais diretamente no formulário protegido de revisão, se solicitado. Não usar a conta real do proprietário.
+- Verificar o domínio `heybrains.app` hospedando o token exato exibido no portal em `/.well-known/openai-apps-challenge` e concluir a verificação.
+- Criar uma conta de demonstração isolada com dados de exemplo e inserir as credenciais diretamente no formulário protegido de revisão. Não usar a conta real do proprietário; não enviar senha pelo chat.
+- Executar manualmente os cinco casos positivos e três negativos no ChatGPT e na conta de demonstração, conferindo os resultados antes da submissão.
 - Revisar os campos preenchidos e autorizar o clique final em **Submit for review**.
 
-A aprovação depende da análise da OpenAI e não pode ser garantida pelo código ou pelo responsável do app. A conexão GitHub/Vercel, o manifest e a política de privacidade não substituem a verificação da conta, domínio, demonstração e fluxo de revisão exigidos pelo portal.
+A aprovação depende da análise da OpenAI e não pode ser garantida pelo código ou pelo responsável do app. O guia atual exige identidade verificada, domínio validado, demonstração acessível, cinco casos positivos, três negativos e conta de demonstração sem MFA ou outros passos manuais. A conexão GitHub/Vercel e o manifest, sozinhos, não substituem esses requisitos.

@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "brains-flashcards",
   "version": "1.2.0",
-  "description": "Das palavras da conversa para a memória: prepare e revise um flashcard no Brains.",
+  "description": "Prepare a flashcard from a word or expression and review it in Brains.",
   "author": {
     "name": "Brains",
     "url": "https://www.heybrains.app"
@@ -13,19 +13,80 @@
   "extensions": {
     "com.openai": {
       "interface": {
-        "displayName": "Brains — Criar flashcard",
-        "shortDescription": "Da conversa para a sua memória",
-        "longDescription": "Transforme uma palavra que aprendeu em um flashcard com frase e imagem. Revise a prévia, escolha uma área e confirme no Brains. Nada é salvo sem sua confirmação.",
+        "displayName": "Brains — Create Flashcards",
+        "shortDescription": "From a conversation to your memory",
+        "longDescription": "Turn a word or expression you choose into a contextual flashcard with an optional image. Review and edit the draft, choose an area, and confirm saving in Brains. Nothing is saved by ChatGPT.",
         "developerName": "Brains",
         "category": "Education",
-        "capabilities": ["Preparar flashcards", "Transferir imagem gerada"],
+        "capabilities": ["Prepare flashcards", "Transfer generated images"],
         "websiteURL": "https://www.heybrains.app",
+        "supportURL": "https://www.heybrains.app/support/",
+        "privacyPolicyURL": "https://www.heybrains.app/privacy/",
+        "termsOfServiceURL": "https://www.heybrains.app/terms/",
         "defaultPrompt": [
-          "Prepare um flashcard de inglês para uma palavra que acabei de aprender, com frase simples e imagem sem texto."
+          "Prepare an English flashcard for a word I just learned, with a simple example sentence and a text-free image."
         ],
         "brandColor": "#2458E6",
         "composerIcon": "./assets/brains-logo.svg",
         "logo": "./assets/brains-logo.svg"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Prepare a text-only flashcard after the user explicitly chooses no image.",
+              "prompt": "Prepare a flashcard without an image. Front: to bet. Back: I don't like to bet. Return the Brains review link and tell me whether it was saved.",
+              "tools_triggered": "prepare_flashcard",
+              "expected_behavior": "Return one temporary Brains review link with the exact front and back, saved=false, and a 30-minute expiration. Do not claim the card was saved."
+            },
+            {
+              "description": "Prepare a flashcard using an image attached to this ChatGPT conversation.",
+              "prompt": "Prepare a flashcard for 'to become' with the sentence 'I want to become fluent in English.' Use the attached image as the card image.",
+              "tools_triggered": "prepare_flashcard",
+              "expected_behavior": "Pass the attached image reference with the matching front and back, return a temporary review link, and state that saving must be confirmed in Brains."
+            },
+            {
+              "description": "Prepare three independent flashcards, each paired with its own attached image.",
+              "prompt": "Prepare three separate Brains flashcards for 'to become — I want to become fluent in English', 'to bet — I don't like to bet', and 'to bite — My son loves to bite his toys'. Use the corresponding attached image for each card and return a separate review link for each.",
+              "tools_triggered": "prepare_flashcard",
+              "expected_behavior": "Return three separate temporary links, each containing the correct front, back, and matching image reference. All results report saved=false."
+            },
+            {
+              "description": "Keep the generated image associated with its own flashcard draft.",
+              "prompt": "Create a flashcard for 'need' with the sentence 'I need to put on my shirt.' Use the image I attached for this card and prepare it in Brains.",
+              "tools_triggered": "prepare_flashcard",
+              "expected_behavior": "Return one review link whose draft contains the requested text and the attached image reference; do not save anything."
+            },
+            {
+              "description": "Allow the user to review and confirm a prepared draft in the Brains app.",
+              "prompt": "Prepare a flashcard for 'awesome' with the sentence 'That was an awesome performance!' Use the attached image and let me review it in Brains.",
+              "tools_triggered": "prepare_flashcard",
+              "expected_behavior": "Return a temporary /import/chatgpt review link, explain that the user chooses an area and confirms in Brains, and make no database write."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Do not create a card when the user only asks for a translation.",
+              "prompt": "What does 'to bite' mean in Portuguese?",
+              "expected_behavior": "Answer the translation question without calling prepare_flashcard because the user did not ask to create a card."
+            },
+            {
+              "description": "Do not silently omit an image requested by the user when no image attachment is available.",
+              "prompt": "Prepare a flashcard for 'to become' with an image, but I have not attached or generated one yet.",
+              "expected_behavior": "Ask the user to attach or generate the image. Do not set withoutImage=true and do not present a card without the requested image."
+            },
+            {
+              "description": "Do not treat a local path or sandbox URI as an image attachment.",
+              "prompt": "Prepare a flashcard for 'to bite' and use this image: /mnt/data/brains_flashcards/to_bite.png.",
+              "expected_behavior": "Explain that the local path is not accessible to Brains and ask the user to attach the image to the ChatGPT conversation. Never fetch or pass the local path."
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "Brains does not sell products or process payments through this plugin."
+      },
+      "publication": {
+        "release_notes": "Initial public release: prepares temporary flashcard drafts with optional ChatGPT image attachments. Users choose an area and confirm saving in Brains."
       }
     }
   }
