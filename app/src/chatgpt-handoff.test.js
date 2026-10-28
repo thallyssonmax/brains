@@ -1,7 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
-import {prepareHandoff,readHandoff} from '../api/chatgpt-handoff.js';
+import {prepareHandoff,readHandoff} from '../server/chatgpt-handoff.js';
 import {createPrepareServer} from '../api/brains-mcp-prepare.js';
 
 const file={download_url:'https://files.oaiusercontent.com/example?se=x',file_id:'file_12345678',mime_type:'image/png'};

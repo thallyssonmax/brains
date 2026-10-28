@@ -1,8 +1,8 @@
 import {createClient} from '@supabase/supabase-js';
 import {readHandoff} from './chatgpt-handoff.js';
-import {fetchImage,mcpFileReference} from './chatgpt-image-probe.js';
+import {fetchImage,mcpFileReference} from '../api/chatgpt-image-probe.js';
 
-export default async function handler(req,res){
+export async function handleChatGPTImportImage(req,res){
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST'){res.statusCode=405;res.setHeader('Allow','POST');return res.end()}
  if(Number(req.headers['content-length']||0)>16000){res.statusCode=413;return res.end()}

@@ -1,4 +1,4 @@
-import {mcpFileReference} from './chatgpt-image-probe.js';
+import {mcpFileReference} from '../api/chatgpt-image-probe.js';
 
 export const HANDOFF_TTL=30*60*1000;
 export function prepareHandoff({front,back,file,withoutImage=false},now=Date.now()){

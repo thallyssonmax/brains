@@ -1,5 +1,5 @@
 import {afterEach,expect,it,vi} from 'vitest';
-import {approvedTestRecipient,dailyPilotCandidates,engagementSendingEnabled} from './engagement-cron.js';
+import {approvedTestRecipient,dailyPilotCandidates,engagementSendingEnabled} from '../api/engagement-cron.js';
 
 afterEach(()=>vi.unstubAllEnvs());
 

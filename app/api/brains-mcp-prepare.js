@@ -1,7 +1,8 @@
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {StreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {z} from 'zod';
-import {prepareHandoff} from './chatgpt-handoff.js';
+import {prepareHandoff} from '../server/chatgpt-handoff.js';
+import {handleChatGPTImportImage} from '../server/chatgpt-import-image.js';
 
 const MAX_REQUEST_BYTES=16_000;
 const imageFile=z.object({
@@ -61,6 +62,7 @@ export function createPrepareServer(){
 }
 
 export default async function handler(req,res){
+ if(new URL(req.url,'https://www.heybrains.app').searchParams.get('operation')==='image')return handleChatGPTImportImage(req,res);
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST'){res.statusCode=405;res.setHeader('Allow','POST');return res.end()}
  if(Number(req.headers['content-length']||0)>MAX_REQUEST_BYTES){res.statusCode=413;return res.end()}
