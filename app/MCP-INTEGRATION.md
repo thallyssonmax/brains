@@ -21,6 +21,7 @@ O Brains mantém duas integrações MCP com contratos e permissões diferentes. 
 - Endpoint: `https://www.heybrains.app/api/brains-mcp-import`
 - Exige token Supabase Auth, cliente OAuth permitido e policies RLS.
 - Pode listar áreas ativas e gravar cards de texto após aprovação explícita do conteúdo e área na conversa.
+- A contagem e a deduplicação consideram apenas cards ativos em decks ativos da área selecionada. Cards na lixeira ou arquivados não bloqueiam recriação; seus registros e histórico permanecem intactos. Duplicatas ativas continuam protegidas.
 - Não transfere imagens ou áudio.
 - Usa a chave pública do projeto; nunca usa `service_role`.
 - A escrita usa `brains_cloud_save`, versão esperada e `operation_id` idempotente.
