@@ -6,6 +6,7 @@
   "functions":{"api/ai.js":{"maxDuration":60},"api/engagement-cron.js":{"maxDuration":60}},
   "crons":[{"path":"/api/engagement-cron","schedule":"0 13 * * *"}],
   "redirects": [
+    {"source":"/termos-de-uso","destination":"/termos-de-uso/","permanent":true},
     {"source":"/conheca","destination":"/","permanent":true},
     {"source":"/conheca/index.html","destination":"/","permanent":true},
     {"source":"/conheca/:path*","destination":"/site/:path*","permanent":true},
