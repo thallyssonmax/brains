@@ -21,6 +21,8 @@ O Brains mantém duas integrações MCP com contratos e permissões diferentes. 
 - Endpoint: `https://www.heybrains.app/api/brains-mcp-import`
 - Exige token Supabase Auth, cliente OAuth permitido e policies RLS.
 - Pode listar áreas ativas e gravar cards de texto após aprovação explícita do conteúdo e área na conversa.
+- A ferramenta somente de leitura `get_connected_account` retorna ao ChatGPT o e-mail e o identificador estável da conta autenticada nesta conexão, para distinguir conexões OAuth. Ela não enumera outras contas nem acessa dados de outra conexão.
+- Se o usuário pedir outra conta, o ChatGPT orienta a conectá-la em **Configurações → Plugins ou Apps → Brains → Contas conectadas → Conectar outra conta**, quando disponível. Depois, confirma a identidade antes de listar áreas ou gravar cards; o MCP não troca de conta por conta própria.
 - A contagem e a deduplicação consideram apenas cards ativos em decks ativos da área selecionada. Cards na lixeira ou arquivados não bloqueiam recriação; seus registros e histórico permanecem intactos. Duplicatas ativas continuam protegidas.
 - Não transfere imagens ou áudio.
 - Usa a chave pública do projeto; nunca usa `service_role`.

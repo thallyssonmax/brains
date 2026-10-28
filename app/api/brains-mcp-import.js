@@ -38,12 +38,23 @@ function errorResult(error){
  return {isError:true,content:[{type:'text',text:`${code}: ${messages[code]??'The cards could not be created. No library data was overwritten.'}`}]};
 }
 
-export function createImportServer(store){
- const server=new McpServer({name:'brains-flashcard-import',title:'Brains — Criar flashcard',version:'0.3.2',websiteUrl:APP_ORIGIN,description:'Crie cards de texto no Brains depois de aprovar o conteúdo nesta conversa.',icons:[{src:`${APP_ORIGIN}/brains-plugin-logo-v1.svg`,mimeType:'image/svg+xml',sizes:['256x256']}]},{instructions:'This MCP is connected to the signed-in Brains account. First call list_areas when the target area is not clear, and ask the user to choose if there is ambiguity. Draft the front and back in the conversation, show the exact card content and target area, and wait for the user to explicitly approve before calling create_flashcards. Never infer approval from the original request to create a proposal. Save only the exact approved text. This integration does not transfer images or audio files. Cards use Brains reference voice playback on both sides; microphone recordings are made in the Brains app.'});
+export function createImportServer(store,account={id:'',email:null}){
+ const server=new McpServer({name:'brains-flashcard-import',title:'Brains — Criar flashcard',version:'0.3.3',websiteUrl:APP_ORIGIN,description:'Crie cards de texto no Brains depois de aprovar o conteúdo nesta conversa.',icons:[{src:`${APP_ORIGIN}/brains-plugin-logo-v1.svg`,mimeType:'image/svg+xml',sizes:['256x256']}]},{instructions:"This MCP is connected to a Brains account selected by ChatGPT through OAuth. If the user names a target Brains account or has multiple connected accounts, call get_connected_account first and confirm that the returned email matches the requested account before listing areas or creating cards. If the requested account is not connected, do not use the current account as a substitute; guide the user to ChatGPT Settings > Plugins or Apps > Brains > Connected accounts > Connect another account, when available. After connection, call get_connected_account again and confirm the account. Never claim to switch accounts yourself or access another account through the current connection. If the account is not specified, use the selected connection and identify it when helpful. Call list_areas when the target area is unclear. Draft front and back, show the exact content and target area, and wait for the user to explicitly approve before create_flashcards. Never infer approval from a request to prepare a proposal. Only active, non-archived cards count as duplicates; deleted or archived cards may be recreated. Explain active duplicates and ask for separate explicit confirmation before retrying. Save only the exact approved text. This integration does not transfer images or audio files. Reference voice playback is provided by Brains; recordings are made in the Brains app."});
+
+ server.registerTool('get_connected_account',{
+  title:'Identificar conta Brains conectada',
+  description:'Mostra o e-mail e o identificador estável da conta Brains autenticada nesta conexão, para distinguir várias contas conectadas no ChatGPT.',
+  inputSchema:{},outputSchema:{account:z.object({accountId:z.string(),email:z.string().email().nullable()})},
+  annotations:{readOnlyHint:true,destructiveHint:false,openWorldHint:false}
+ },async()=>{
+  const profile={accountId:String(account.id??''),email:typeof account.email==='string'&&account.email?account.email:null};
+  const response={account:profile};
+  return {structuredContent:response,content:[{type:'text',text:`Conta Brains conectada: ${profile.email??`ID ${profile.accountId}`}.`}]};
+ });
 
  server.registerTool('list_areas',{
   title:'Listar áreas do Brains',
-  description:'Lista apenas as áreas ativas desta conta para o usuário escolher onde criar os cards. Não retorna cards nem histórico de estudo.',
+  description:'Lista apenas as áreas ativas desta conexão. Se houver várias contas conectadas ou uma conta específica for solicitada, confirme a conta com get_connected_account antes de listar.',
   inputSchema:{},outputSchema:{areas:z.array(z.object({id:z.string(),name:z.string(),language:z.string(),cardCount:z.number()}))},
   annotations:{readOnlyHint:true,destructiveHint:false,openWorldHint:false}
  },async()=>{
@@ -134,7 +145,7 @@ async function authenticatedStore(req){
  const {data,error}=await client.auth.getUser(token);
  if(error||!data.user)return {error:'unauthorized'};
  if(clientIdFromToken(token)!==allowedClientId)return {error:'forbidden'};
- return {store:{
+ return {account:{id:data.user.id,email:data.user.email??null},store:{
   async read(){
    const result=await client.from('brains_cloud').select('version,document').eq('user_id',data.user.id).maybeSingle();
    if(result.error)throw Error('CLOUD_UNAVAILABLE');
@@ -154,7 +165,7 @@ export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST'){res.statusCode=405;res.setHeader('Allow','POST');return res.end()}
  if(Number(req.headers['content-length']||0)>MAX_BODY){res.statusCode=413;return res.end()}
- let store;
+ let store,account;
  try{
   const auth=await authenticatedStore(req);
   if(auth.error){
@@ -163,8 +174,8 @@ export default async function handler(req,res){
    const resourceMetadata=`${APP_ORIGIN}/.well-known/oauth-protected-resource`;
    res.statusCode=401;res.setHeader('WWW-Authenticate',`Bearer realm="Brains", resource_metadata="${resourceMetadata}"`);return res.end('Authentication required.');
   }
-  store=auth.store;
+  store=auth.store;account=auth.account;
  }catch{res.statusCode=401;res.setHeader('WWW-Authenticate',`Bearer realm="Brains", resource_metadata="${APP_ORIGIN}/.well-known/oauth-protected-resource"`);return res.end('Authentication required.')}
- const server=createImportServer(store),transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true,maxPostBodySize:MAX_BODY});
+ const server=createImportServer(store,account),transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true,maxPostBodySize:MAX_BODY});
  try{await server.connect(transport);await transport.handleRequest(req,res,req.body)}catch{if(!res.headersSent){res.statusCode=500;res.end('MCP request failed.')}}finally{await server.close().catch(()=>{})}
 }

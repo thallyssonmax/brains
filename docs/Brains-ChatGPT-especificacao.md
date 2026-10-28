@@ -31,7 +31,7 @@ Cada chamada prepara um rascunho independente, para manter texto e imagem do mes
 
 ## Isolamento da integração OAuth existente
 
-O domínio também mantém `/api/brains-mcp-import`, conector OAuth separado que consulta áreas e pode criar cards de texto após aprovação explícita na conversa. Esse endpoint exige token Supabase válido, cliente permitido e políticas RLS. O plugin público submetido aponta exclusivamente para `/api/brains-mcp-prepare`; não publica as ferramentas OAuth nem as usa no fluxo de importação com imagem.
+O domínio também mantém `/api/brains-mcp-import`, conector OAuth separado que consulta áreas e pode criar cards de texto após aprovação explícita na conversa. Esse endpoint exige token Supabase válido, cliente permitido e políticas RLS. A ferramenta somente de leitura `get_connected_account` retorna o e-mail e o ID estável da conta autenticada nesta conexão; ela não enumera outras contas nem expõe dados de outra conexão. Se o usuário pedir outra conta, o ChatGPT orienta a conectá-la em Configurações → Plugins ou Apps → Brains → Contas conectadas → Conectar outra conta, quando disponível, e confirma a identidade antes de consultar áreas ou gravar. O plugin público submetido aponta exclusivamente para `/api/brains-mcp-prepare`; não publica as ferramentas OAuth nem as usa no fluxo de importação com imagem.
 
 ## Preservação de dados
 
