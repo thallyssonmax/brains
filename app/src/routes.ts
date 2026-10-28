@@ -1,4 +1,4 @@
-export const paths = {landing:'/', login:'/login', home:'/home', areas:'/areas', settings:'/settings', oauthConsent:'/oauth/consent'} as const;
+export const paths = {landing:'/', login:'/login', home:'/home', areas:'/areas', settings:'/settings', oauthConsent:'/oauth/consent', chatgptImport:'/import/chatgpt'} as const;
 export const areaPath = (id:string) => paths.areas+'/'+encodeURIComponent(id);
 const isUuid=(value:string)=>value.length===36&&value.split('').every((char,index)=>index===8||index===13||index===18||index===23?char==='-':'0123456789abcdefABCDEF'.includes(char));
 export function isAdminRoute(path:string){const normalized=path.endsWith('/')?path.slice(0,-1):path;return ['/admin','/admin/users','/admin/funnel','/admin/activation'].includes(normalized)}
@@ -16,7 +16,9 @@ export function productRoute(pathname:string):{page:'home'|'decks'|'area'|'setti
 function safeProductTarget(value:string|null){
  if(!value||!value.startsWith('/')||value.startsWith('//')||value.includes(String.fromCharCode(92)))return null;
  let parsed:URL;try{parsed=new URL(value,'https://www.heybrains.app')}catch{return null}
- if(parsed.origin!=='https://www.heybrains.app'||!productRoute(parsed.pathname))return null;
+ const handoffTarget=parsed.pathname===paths.chatgptImport&&isUuid(parsed.searchParams.get('handoff')??'')&&parsed.searchParams.getAll('handoff').length===1;
+ if(parsed.origin!=='https://www.heybrains.app'||(!productRoute(parsed.pathname)&&!handoffTarget))return null;
+ if(handoffTarget){for(const key of parsed.searchParams.keys())if(key!=='handoff')return null;return paths.chatgptImport+'?handoff='+encodeURIComponent(parsed.searchParams.get('handoff')!)}
  const allowedKeys=new Set(['email_message_id','createArea','createCard','review','utm_source']);
  for(const key of parsed.searchParams.keys())if(!allowedKeys.has(key))return null;
  for(const key of allowedKeys)if(parsed.searchParams.getAll(key).length>1)return null;

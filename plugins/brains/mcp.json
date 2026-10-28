@@ -3,7 +3,7 @@
   "mcpServers": {
     "brains": {
       "type": "streamable-http",
-      "url": "https://www.heybrains.app/api/brains-mcp-import"
+      "url": "https://www.heybrains.app/api/brains-mcp-prepare"
     }
   }
 }

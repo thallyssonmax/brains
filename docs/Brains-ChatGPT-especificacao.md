@@ -1,70 +1,62 @@
-# Brains + ChatGPT — especificação da integração
+# Brains + ChatGPT — integração pública
 
-Atualizado em 25/10/2026 · Versão 2.0 · Implementação em PR; ainda não publicada em produção.
+Atualizado em 27/10/2026 · Versão pública 1.2.0
 
-## Objetivo
+## Objetivo e princípio de segurança
 
-Permitir que o usuário transforme conteúdo aprovado em uma conversa do ChatGPT em flashcards de texto no Brains, com uma autorização individual da conta e sem abrir o app para confirmar cada card.
+Transformar conteúdo que o usuário escolheu na conversa em um rascunho de flashcard e permitir que ele revise e confirme o salvamento dentro do Brains. O endpoint do plugin público não acessa contas, áreas, banco de dados ou armazenamento de usuários e não salva cards.
 
-## Experiência
+## Jornada do plugin público
 
-1. O usuário pede cards sobre conteúdo específico.
-2. O ChatGPT prepara frente e verso e pergunta a área quando ela não estiver clara.
-3. Antes de gravar, apresenta a área e o texto completo de cada card e espera aprovação explícita do usuário na conversa.
-4. Depois da aprovação, grava os cards diretamente na área escolhida e confirma o resultado.
-5. A pessoa usa o app para estudar, gravar áudio ou editar os cards como de costume.
+1. O usuário pede explicitamente um flashcard; o GPT não deve extrair conteúdo automaticamente do restante da conversa.
+2. O ChatGPT prepara frente, verso contextual e, quando solicitado, uma imagem educativa.
+3. `prepare_flashcard` recebe os textos e uma referência de anexo compatível. Caminhos locais, `sandbox:` e IDs sem objeto de referência são rejeitados.
+4. O Brains retorna um link temporário de revisão com expiração de 30 minutos e `saved:false`.
+5. O usuário entra na conta, escolhe uma área, confere ou edita o rascunho e confirma.
+6. Só então o aplicativo salva frente, verso e imagem na biblioteca daquela conta.
 
-A autorização OAuth do Brains permite ao ChatGPT usar a integração. Ela não substitui a aprovação do conteúdo de cada gravação.
+Cada chamada prepara um rascunho independente, para manter texto e imagem do mesmo card associados. Falhas de imagem retornam códigos específicos e nunca mudam automaticamente para `withoutImage`. Essa opção só é usada quando o usuário escolheu explicitamente não incluir imagem.
 
-## Escopo desta versão
+## Contrato público
 
-- Consultar as áreas ativas da conta autenticada e permitir a escolha de uma área.
-- Criar de 1 a 20 cards de texto por chamada, com limites de 200 caracteres na frente e 800 no verso.
-- Recusar duplicatas exatas na área; frente já existente com outra resposta exige confirmação explícita de significado diferente.
-- Usar a voz de referência existente no Brains na frente e no verso. O idioma da frente vem da área; o verso usa a detecção automática já disponível no app.
-- Gravar, editar e reproduzir áudio no Brains. A integração não transfere imagem ou arquivos de áudio.
-- Criar o card imediatamente após aprovação explícita do conteúdo na conversa.
+- MCP Streamable HTTP: `https://www.heybrains.app/api/brains-mcp-prepare`
+- Ferramenta: `prepare_flashcard`
+- Entrada: `front` (1–200 caracteres), `back` (1–800), `file` (referência de anexo opcional) ou `withoutImage:true` por escolha explícita.
+- Saída: `reviewUrl`, `expiresInMinutes:30`, `saved:false`.
+- Referências de arquivo: somente objeto com `file_id` e `download_url` do host permitido `files.oaiusercontent.com` ou `sdmntpr*.oaiusercontent.com` via HTTPS.
+- Imagens: bytes validados como PNG, JPEG ou WebP; limite 5 MiB; redirects são recusados; timeout de download de 8 segundos.
+- O servidor público não faz download da imagem nem persiste os bytes durante `prepare_flashcard`.
+- A rota autenticada `/api/chatgpt-import-image` verifica a sessão Supabase do usuário, revalida a referência e baixa a imagem quando a página de revisão é aberta.
+- O payload é guardado no fragmento de URL, capturado para `sessionStorage` e removido do endereço visível. O fragmento não é enviado ao servidor HTTP ao abrir a página.
 
-## Fora de escopo
+## Isolamento da integração OAuth existente
 
-- Analisar automaticamente todo o histórico do ChatGPT ou extrair palavras sem pedido.
-- Importar imagens ou áudios do ChatGPT.
-- Alterar cards existentes, áreas, metas, agendamentos ou histórico de estudo.
-- Excluir dados, criar áreas, modificar políticas de banco ou acessar dados de outra conta.
+O domínio também mantém `/api/brains-mcp-import`, conector OAuth separado que consulta áreas e pode criar cards de texto após aprovação explícita na conversa. Esse endpoint exige token Supabase válido, cliente permitido e políticas RLS. O plugin público submetido aponta exclusivamente para `/api/brains-mcp-prepare`; não publica as ferramentas OAuth nem as usa no fluxo de importação com imagem.
 
-## Arquitetura e preservação
+## Preservação de dados
 
-O servidor MCP valida o token do usuário pelo Supabase Auth e também confere o `client_id` OAuth permitido. Consultas usam a chave publicável do projeto e o token do usuário; não usam `service_role`. A biblioteca é lida sob as políticas RLS existentes e gravada através da RPC versionada `brains_cloud_save`, com versão esperada e ID de operação.
+O fluxo público de rascunho não executa consultas ou escritas no banco e não altera schema, IDs, áreas, cards, relações, progresso ou histórico. A única escrita ocorre após confirmação no aplicativo, usando os mecanismos de persistência já existentes. A migration de retenção de analytics é separada, apaga apenas eventos com mais de 12 meses e não altera dados de estudo.
 
-A criação acrescenta somente os cards aprovados ao documento atual. Não há migration, alteração de schema, reset ou substituição do histórico. Os relacionamentos e IDs existentes são mantidos.
+## Diagnóstico e recuperação
 
-## Rotas e ferramentas
+O MCP distingue conteúdo ausente ou longo, imagem ausente, referência inválida, falha de acesso, formato não suportado, limite excedido e falha de preparação. O ChatGPT deve manter o texto do card, pedir para anexar novamente a imagem ou tentar a geração de novo e só omitir a imagem quando o usuário assim decidir.
 
-- MCP: `https://www.heybrains.app/api/brains-mcp-import`
-- Metadados do recurso protegido: `https://www.heybrains.app/.well-known/oauth-protected-resource`
-- Consentimento: `https://www.heybrains.app/oauth/consent`
-- `list_areas`: leitura das áreas ativas da conta conectada.
-- `create_flashcards`: gravação de cards após a aprovação explícita do conteúdo e área na conversa.
+## Verificação antes de publicar
 
-`list_areas` não grava nada. `create_flashcards` grava imediatamente; deve ser chamado apenas depois que frente, verso e área forem exibidos e aprovados.
-
-## Configuração atual e pendências
-
-- Supabase OAuth Server habilitado no projeto existente.
-- Site URL: `https://www.heybrains.app`.
-- Authorization Path: `/oauth/consent`.
-- Dynamic Client Registration: desativado. O cliente deve ser registrado estaticamente usando o callback exato informado pelo ChatGPT.
-- Ainda falta publicar o código do PR, obter o callback do ChatGPT, registrar o cliente OAuth, colocar o mesmo ID em `BRAINS_CHATGPT_CLIENT_ID` e `VITE_BRAINS_CHATGPT_CLIENT_ID` na Vercel Production e validar o fluxo completo.
-- A integração ainda não está disponível na produção. Nenhum cliente OAuth foi registrado e nenhum card foi criado por ela.
+- Validar manifest e endpoint MCP em produção.
+- Testar anexo criado pela ferramenta nativa do ChatGPT e anexo gerado por código após anexá-lo à conversa.
+- Testar referência inválida, arquivo inacessível, formato não suportado e acima do limite.
+- Preparar três drafts independentes e conferir associação correta de frente, verso e imagem.
+- Confirmar que a página importa, a imagem carrega após autenticação e nenhum dado é gravado até o botão de confirmação.
+- Testar diretamente `/import/chatgpt` e atualizar a página em produção.
+- Nenhum teste de submissão cria cards em conta real; usar conta de demonstração isolada.
 
 ## Critérios de aceite
 
-- O ChatGPT lista somente áreas da conta conectada.
-- Conteúdo exato e área são apresentados antes de cada chamada de escrita.
-- A ferramenta de escrita exige aprovação explícita do usuário na conversa.
-- Frente e verso ficam associados ao card e à área escolhida.
-- Cards duplicados são tratados conforme a regra acima.
-- Áudio de referência funciona nos dois lados depois da gravação no Brains.
-- Sem autenticação válida ou cliente permitido, nenhuma leitura ou escrita é feita.
-- Dados, IDs, progresso e histórico existentes permanecem intactos.
-- Nenhum card é criado por falha, listagem, consentimento OAuth ou aprovação OAuth isolada.
+- O pacote público chama apenas `brains-mcp-prepare`.
+- O link temporário e a imagem correta chegam à prévia de revisão.
+- Login não descarta o rascunho.
+- O usuário escolhe a área, edita e confirma no Brains.
+- Nenhum card é salvo pelo endpoint MCP público.
+- Erros de transporte são diagnosticáveis e nunca contornados silenciosamente.
+- Dados e progresso existentes permanecem intactos.

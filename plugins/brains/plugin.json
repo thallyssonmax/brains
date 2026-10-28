@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "brains-flashcards",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Das palavras da conversa para a memória: prepare e revise um flashcard no Brains.",
   "author": {
     "name": "Brains",

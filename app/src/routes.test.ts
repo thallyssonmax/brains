@@ -36,6 +36,13 @@ describe('public and authenticated routes',()=>{
   expect(returnDestination('?next='+encodeURIComponent('/home?review=1&email_message_id='+message+'&utm_source=bad'))).toBe('/home?email_message_id='+message+'&review=1');
   expect(loginDestination('?next=%2Fsettings%3Ffoo%3Dbar')).toBe('/home');
  });
+ it('preserves only a valid temporary ChatGPT handoff through authentication',()=>{
+  const key='f0837cd4-1111-4444-9999-ffeabcabcdef';
+  const target='/import/chatgpt?handoff='+key;
+  expect(returnDestination('?next='+encodeURIComponent(target))).toBe(target);
+  expect(accessRedirect('/login',true,false,'?next='+encodeURIComponent(target))).toBe(target);
+  expect(returnDestination('?next='+encodeURIComponent('/import/chatgpt?handoff=bad&redirect=https://evil.example'))).toBeNull();
+ });
  it('uses existing area IDs without creating or translating references',()=>{
   const id='f0837cd4-1111-4444-9999-ffeabcabcdef';
   expect(productRoute(areaPath(id))).toEqual({page:'area',areaId:id});
