@@ -13,8 +13,8 @@
   "extensions": {
     "com.openai": {
       "interface": {
-        "displayName": "Brains — Create Flashcards",
-        "shortDescription": "From a conversation to your memory",
+        "displayName": "Brains — Flashcards",
+        "shortDescription": "From words to lasting memory",
         "longDescription": "Turn a word or expression you choose into a contextual flashcard with an optional image. Review and edit the draft, choose an area, and confirm saving in Brains. Nothing is saved by ChatGPT.",
         "developerName": "Brains",
         "category": "Education",
@@ -24,7 +24,9 @@
         "privacyPolicyURL": "https://www.heybrains.app/privacy/",
         "termsOfServiceURL": "https://www.heybrains.app/terms/",
         "defaultPrompt": [
-          "Prepare an English flashcard for a word I just learned, with a simple example sentence and a text-free image."
+          "Prepare an English flashcard for a word I just learned, with a simple example sentence and a text-free image.",
+          "Crie um flashcard de inglês para uma palavra que acabei de aprender, com uma frase simples e uma imagem sem texto.",
+          "Prepara una tarjeta de inglés para una palabra que acabo de aprender, con una frase sencilla y una imagen sin texto."
         ],
         "brandColor": "#2458E6",
         "composerIcon": "./assets/brains-logo.svg",
@@ -86,7 +88,17 @@
         "commerce_description": "Brains does not sell products or process payments through this plugin."
       },
       "publication": {
-        "release_notes": "Initial public release: prepares temporary flashcard drafts with optional ChatGPT image attachments. Users choose an area and confirm saving in Brains."
+        "release_notes": "Initial public release: prepares temporary flashcard drafts with optional ChatGPT image attachments. Users choose an area and confirm saving in Brains.",
+        "translations": {
+          "pt-BR": {
+            "subtitle": "Flashcards para memorizar",
+            "description": "Transforme uma palavra ou expressão escolhida na conversa em um flashcard contextual, com imagem opcional. Revise e edite o rascunho, escolha uma área e confirme no Brains. O ChatGPT não salva cards sozinho."
+          },
+          "es-ES": {
+            "subtitle": "Tarjetas para recordar",
+            "description": "Convierte una palabra o expresión elegida en la conversación en una tarjeta contextual, con imagen opcional. Revisa y edita el borrador, elige un área y confirma en Brains. ChatGPT no guarda tarjetas por su cuenta."
+          }
+        }
       }
     }
   }
