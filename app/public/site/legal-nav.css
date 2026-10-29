@@ -1,0 +1,199 @@
+/* One navigation system shared by the landing and the legal pages. */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #ffffffed;
+  border-bottom: 1px solid #edf0f5;
+  backdrop-filter: blur(16px);
+  line-height: normal;
+}
+.site-header .site-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  width: min(1120px, calc(100% - 64px));
+  height: 76px;
+  min-height: 0;
+  margin-inline: auto;
+  padding: 0;
+}
+.site-header .site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+  margin: 0;
+  color: #17233b;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.6px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-header .site-brand:hover { color: #17233b; text-decoration: none; }
+.site-header .site-mark {
+  display: grid;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  border-radius: 12px;
+  background: #2458e6;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 750;
+}
+.site-header .site-navlinks {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  width: auto;
+  margin: 0 20px 0 auto;
+  color: #526078;
+  font-size: 14px;
+  font-weight: 600;
+}
+.site-header .site-navlinks a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 14px 0;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-header .site-navlinks a:hover { color: #2458e6; }
+.site-header .site-actions { display: contents; }
+.site-header .site-login {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: #2458e6;
+  box-shadow: 0 4px 10px #17233b09;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background .18s, transform .18s;
+}
+.site-header .site-login:hover { background: #1947c4; color: #fff; transform: translateY(-2px); }
+.site-header .site-menu-toggle { display: none; }
+.site-header a:focus-visible, .site-header button:focus-visible { outline: 3px solid #829fff; outline-offset: 5px; }
+
+@media (max-width: 950px) and (min-width: 901px) {
+  .site-header .site-navlinks { gap: 20px; margin-right: 0; }
+}
+@media (max-width: 900px) {
+  .site-header .site-navigation {
+    position: relative;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    width: calc(100% - 40px);
+    height: 72px;
+    min-height: 72px;
+    padding-block: 10px;
+  }
+  .site-header .site-brand { min-height: 44px; margin-right: auto; font-size: 20px; }
+  .site-header .site-actions { display: flex; align-items: center; gap: 8px; }
+  .site-header .site-login { min-height: 44px; padding: 10px 16px; font-size: 14px; }
+  .site-header .site-menu-toggle {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    padding: 0;
+    border: 1px solid #e3e8f0;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 4px 10px #17233b09;
+    color: #2458e6;
+    cursor: pointer;
+    transition: background .2s ease, box-shadow .2s ease;
+  }
+  .site-header .site-menu-toggle:hover,
+  .site-header .site-menu-toggle[aria-expanded="true"] { background: #edf2ff; }
+  .site-header .site-menu-toggle:focus-visible { outline-offset: 3px; }
+  .site-header .menu-icon { position: relative; display: block; width: 20px; height: 20px; }
+  .site-header .menu-icon::before,
+  .site-header .menu-icon::after,
+  .site-header .menu-icon span {
+    content: "";
+    position: absolute;
+    left: 1px;
+    width: 18px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: top .22s ease, transform .22s ease, opacity .15s ease;
+  }
+  .site-header .menu-icon::before { top: 4px; }
+  .site-header .menu-icon span { top: 9px; }
+  .site-header .menu-icon::after { top: 14px; }
+  .site-header .site-menu-toggle[aria-expanded="true"] .menu-icon::before { top: 9px; transform: rotate(45deg); }
+  .site-header .site-menu-toggle[aria-expanded="true"] .menu-icon span { opacity: 0; }
+  .site-header .site-menu-toggle[aria-expanded="true"] .menu-icon::after { top: 9px; transform: rotate(-45deg); }
+  .site-header .site-navlinks {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    width: max-content;
+    min-width: 186px;
+    max-width: calc(100vw - 32px);
+    margin: 0;
+    padding: 7px;
+    border: 1px solid #e3e8f0;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 18px 44px #17233b1c;
+    color: #17233b;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-8px);
+    transition: opacity .2s ease, transform .2s ease, visibility .2s ease;
+  }
+  .site-header .site-navlinks.is-open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0); }
+  .site-header .site-navlinks a {
+    display: flex;
+    justify-content: flex-start;
+    min-height: 44px;
+    padding: 11px 13px;
+    border-radius: 9px;
+    text-align: left;
+  }
+  .site-header .site-navlinks a:hover,
+  .site-header .site-navlinks a:focus-visible { background: #edf2ff; text-decoration: none; }
+}
+@media (max-width: 480px) {
+  .site-header .site-navigation { width: calc(100% - 32px); }
+  .site-header .site-brand { gap: 7px; font-size: 19px; }
+  .site-header .site-mark { width: 32px; height: 32px; font-size: 22px; }
+}
+@media (max-width: 360px) {
+  .site-header .site-navigation { height: 68px; min-height: 68px; }
+  .site-header .site-login { padding-inline: 12px; font-size: 13px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .site-header { position: relative; }
+}
+/* The legal-page card follows the landing hero's mobile side spacing. */
+@media (max-width: 700px) {
+  .wrap { width: calc(100% - 24px); margin: 12px auto 36px; }
+  .wrap main { border: 1px solid #e3e8f1; border-radius: 20px; }
+  .wrap footer { padding-inline: 12px; }
+}

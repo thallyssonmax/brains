@@ -38,13 +38,11 @@
     footer a:hover{color:var(--blue)}
     @media(max-width:600px){.wrap{width:100%;margin:0 auto}.topbar{padding:18px 20px;margin:0}.brand{font-size:18px}.brand img{width:32px;height:32px}nav{gap:12px;font-size:13px}main{border-radius:0;border-left:0;border-right:0}.intro{padding:30px 24px 24px}.lead{font-size:16px}.content{padding:4px 24px 30px}.content h2{margin-top:24px}footer{padding:16px 24px 24px}}
   </style>
+  <link rel="stylesheet" href="/site/legal-nav.css">
 </head>
 <body>
+  <header class="site-header"><nav class="container navigation site-navigation" aria-label="Navegação principal"><a class="brand site-brand" href="/" aria-label="Brains, início"><span class="mark site-mark">B</span>Brains</a><div class="navlinks site-navlinks" id="mobile-nav-links"><a href="/#por-que">Por que funciona</a><a href="/#como-usar">Como usar</a></div><div class="nav-actions site-actions"><a class="button compact site-login" href="/login">Login</a><button class="site-menu-toggle menu-toggle" type="button" aria-label="Abrir menu" aria-controls="mobile-nav-links" aria-expanded="false"><span class="menu-icon" aria-hidden="true"><span></span></span></button></div></nav></header>
   <div class="wrap">
-    <header class="topbar">
-      <a class="brand" href="/" aria-label="Brains — início"><img src="../brains-plugin-logo.svg" alt=""><span>Brains</span></a>
-      <nav aria-label="Links úteis"><a href="/privacy/">Privacidade</a><a href="/support/">Suporte</a></nav>
-    </header>
     <main>
       <section class="intro">
         <p class="eyebrow">Brains · Informações legais</p>
@@ -73,5 +71,6 @@
     </main>
     <footer><a href="/">Brains</a><a href="/support/">Suporte</a><a href="/privacy/">Política de Privacidade</a></footer>
   </div>
+  <script src="/site/mobile-nav.js"></script>
 </body>
 </html>
