@@ -133,18 +133,30 @@ export function clientIdFromToken(token){
  try{const parts=token.split('.');if(parts.length!==3)return '';return JSON.parse(Buffer.from(parts[1],'base64url').toString('utf8')).client_id??''}catch{return ''}
 }
 
+export function allowedChatGPTClientIds(env=process.env){
+ return [...new Set([
+  env.BRAINS_CHATGPT_CLIENT_ID,
+  env.VITE_BRAINS_CHATGPT_CLIENT_ID,
+  env.BRAINS_PUBLIC_CHATGPT_CLIENT_ID
+ ].flatMap(value=>String(value??'').split(',')).map(value=>value.trim()).filter(Boolean))];
+}
+
+export function isAllowedChatGPTClientId(clientId,env=process.env){
+ return Boolean(clientId)&&allowedChatGPTClientIds(env).includes(clientId);
+}
+
 async function authenticatedStore(req){
  const match=/^Bearer\s+(.+)$/i.exec(String(req.headers.authorization??''));
  if(!match)return {error:'unauthorized'};
  const url=setting('SUPABASE_URL','VITE_SUPABASE_URL');
  const key=setting('SUPABASE_PUBLISHABLE_KEY','VITE_SUPABASE_PUBLISHABLE_KEY');
- const allowedClientId=setting('BRAINS_CHATGPT_CLIENT_ID','VITE_BRAINS_CHATGPT_CLIENT_ID');
- if(!url||!key||!allowedClientId)return {error:'configuration'};
+ const allowedClientIds=allowedChatGPTClientIds();
+ if(!url||!key||!allowedClientIds.length)return {error:'configuration'};
  const token=match[1];
  const client=createClient(url,key,{global:{headers:{Authorization:`Bearer ${token}`}},auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
  const {data,error}=await client.auth.getUser(token);
  if(error||!data.user)return {error:'unauthorized'};
- if(clientIdFromToken(token)!==allowedClientId)return {error:'forbidden'};
+ if(!isAllowedChatGPTClientId(clientIdFromToken(token)))return {error:'forbidden'};
  return {account:{id:data.user.id,email:data.user.email??null},store:{
   async read(){
    const result=await client.from('brains_cloud').select('version,document').eq('user_id',data.user.id).maybeSingle();

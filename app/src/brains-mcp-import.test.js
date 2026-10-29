@@ -3,7 +3,7 @@ globalThis.crypto??=webcrypto;
 import {describe,it,expect} from 'vitest';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
-import importHandler,{clientIdFromToken,createImportServer} from '../api/brains-mcp-import.js';
+import importHandler,{allowedChatGPTClientIds,clientIdFromToken,createImportServer,isAllowedChatGPTClientId} from '../api/brains-mcp-import.js';
 
 function fixture(){
  const library={schema:1,revision:3,areas:[{id:'area-en',name:'English',archived:false,deleted:false}],decks:[{id:'deck-en',areaId:'area-en',name:'English',language:'en-US',archived:false,deleted:false}],cards:[],reviews:[],preferences:{locale:'en',goal:10,newLimit:2,timezone:'UTC'}};
@@ -24,10 +24,19 @@ describe('authenticated Brains card tools',()=>{
   expect(res.statusCode).toBe(401);
   expect(headers['WWW-Authenticate']).toContain('https://www.heybrains.app/.well-known/oauth-protected-resource');
  });
- it('extracts the client allowlist only from a verified OAuth JWT payload format',()=>{
+ it('extracts the client ID claim for checking only after Supabase verifies the token',()=>{
   const payload=Buffer.from(JSON.stringify({sub:'user-id',client_id:'brains-chatgpt-client'})).toString('base64url');
   expect(clientIdFromToken(`header.${payload}.signature`)).toBe('brains-chatgpt-client');
   expect(clientIdFromToken('not-a-jwt')).toBe('');
+ });
+
+ it('allows the personal and explicitly registered public OAuth clients without opening access to other clients',()=>{
+  const env={BRAINS_CHATGPT_CLIENT_ID:'personal-client',BRAINS_PUBLIC_CHATGPT_CLIENT_ID:'public-client'};
+  expect(allowedChatGPTClientIds(env)).toEqual(['personal-client','public-client']);
+  expect(isAllowedChatGPTClientId('personal-client',env)).toBe(true);
+  expect(isAllowedChatGPTClientId('public-client',env)).toBe(true);
+  expect(isAllowedChatGPTClientId('unregistered-client',env)).toBe(false);
+  expect(isAllowedChatGPTClientId('',env)).toBe(false);
  });
 
  it('exposes only area listing and an explicitly approved text-card writer',async()=>withClient(fixture().store,async client=>{
