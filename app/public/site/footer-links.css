@@ -1,0 +1,32 @@
+.footer-legal {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  column-gap: 24px;
+  row-gap: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.footer-legal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #17233b;
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.footer-legal a:hover { text-decoration: underline; }
+
+@media (max-width: 700px) {
+  .footer-legal {
+    order: 4;
+    justify-content: center;
+    column-gap: 20px;
+    width: 100%;
+  }
+}
