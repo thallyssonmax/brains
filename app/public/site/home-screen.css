@@ -31,13 +31,13 @@
 
 .home-screen-options {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   margin-top: 24px;
 }
 
 .home-screen-option {
-  padding-left: 16px;
-  border-left: 3px solid var(--blue);
+  padding-left: 0;
 }
 
 .home-screen-option h3 {
@@ -117,6 +117,7 @@
   }
 
   .home-screen-options {
+    grid-template-columns: 1fr;
     gap: 20px;
     margin-top: 24px;
   }

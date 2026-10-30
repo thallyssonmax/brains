@@ -21,6 +21,8 @@
     {"source":"/.well-known/oauth-protected-resource","destination":"/api/oauth-protected-resource"},
     {"source":"/api/chatgpt-import-image","destination":"/api/brains-mcp-prepare?operation=image"},
     {"source":"/","destination":"/index.html"},
+    {"source":"/style-guide","destination":"/style-guide/index.html"},
+    {"source":"/style-guide/","destination":"/style-guide/index.html"},
     {"source":"/:path*","destination":"/product.html"}
   ]
 }

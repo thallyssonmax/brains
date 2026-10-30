@@ -1,0 +1,63 @@
+/* Shared HeyBrains visual foundations for the public pages and product. */
+:root {
+  --color-brand: #2458e6;
+  --color-brand-hover: #1947c4;
+  --color-ink: #17233b;
+  --color-muted: #526078;
+  --color-surface: #fff;
+  --color-surface-soft: #f5f7fb;
+  --color-border: #e3e8f0;
+  --color-focus: #829fff;
+  --radius-control: 12px;
+  --radius-card: 18px;
+  --radius-feature: 24px;
+  --shadow-card: 0 12px 28px #17233b0b;
+  --space-section: clamp(48px, 7vw, 100px);
+  --public-hero-title-size: clamp(38px, 4vw, 54px);
+  --public-hero-title-size-mobile: clamp(35px, 9vw, 43px);
+  --public-hero-lead-size: 17px;
+  --public-hero-lead-size-mobile: 16px;
+  --public-hero-action-size: 15px;
+  --motion-fast: 180ms;
+  --motion-card: 650ms;
+  --motion-ease: cubic-bezier(.2, .7, .2, 1);
+  --blue: var(--color-brand);
+  --ink: var(--color-ink);
+  --muted: var(--color-muted);
+  --border: var(--color-border);
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+/* The favicon asset is the single source for every brand symbol. */
+img.mark.site-mark {
+  display: block;
+  flex: 0 0 auto;
+  padding: 0;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+footer .brand img.site-mark { width: 32px; height: 32px; border-radius: 9px; }
+
+:where(.button, .primary, .secondary, .good, .bad, .tile, .level, .steps li) {
+  transition: transform var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease),
+    background-color var(--motion-fast) var(--motion-ease);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  :where(.tile, .level, .steps li):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.button, .primary, .secondary, .good, .bad, .tile, .level, .steps li) {
+    transition-duration: 0ms;
+  }
+}

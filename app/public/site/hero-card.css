@@ -1,4 +1,4 @@
-/* Minimalist study card. Keep the existing flip interaction untouched. */
+/* The two faces share one fixed card footprint so the deck turns without shifting the hero. */
 .hero-visual {
   width: min(100%, 440px);
   padding: 0;
@@ -26,6 +26,30 @@
 .hero-visual .demo-card {
   min-height: 365px;
   margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 24px;
+  background: transparent;
+  box-shadow: none;
+  perspective: 1400px;
+  display: block;
+}
+
+.hero-visual .demo-card-inner {
+  position: relative;
+  width: 100%;
+  min-height: inherit;
+  transform-style: preserve-3d;
+  transition: transform var(--motion-card) var(--motion-ease);
+}
+
+.hero-visual .demo-card.is-flipped .demo-card-inner {
+  transform: rotateY(180deg);
+}
+
+.hero-visual .demo-card-face {
+  position: absolute;
+  inset: 0;
   padding: 27px 28px 25px;
   border: 0;
   border-radius: 24px;
@@ -35,6 +59,21 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.hero-visual .demo-card-back {
+  transform: rotateY(180deg);
+  pointer-events: none;
+}
+
+.hero-visual .demo-card.is-flipped .demo-card-front {
+  pointer-events: none;
+}
+
+.hero-visual .demo-card.is-flipped .demo-card-back {
+  pointer-events: auto;
 }
 
 .hero-visual .card-label {
@@ -65,7 +104,7 @@
   line-height: 1.5;
 }
 
-.hero-visual #flip {
+.hero-visual .demo-card-face [data-flip] {
   width: auto;
   min-height: 42px;
   margin-top: 25px;
@@ -78,7 +117,7 @@
   gap: 0;
 }
 
-.hero-visual #flip:hover { background: #dfe9ff; }
+.hero-visual .demo-card-face [data-flip]:hover { background: #dfe9ff; }
 
 .hero-visual .visual-bottom {
   align-self: center;
@@ -100,22 +139,29 @@
 
 @media (max-width: 900px) {
   .hero-visual { width: min(100%, 410px); max-width: 410px; }
-  .hero-visual .demo-card { min-height: 350px; padding: 25px 23px 24px; }
+  .hero-visual .demo-card { min-height: 350px; }
+  .hero-visual .demo-card-face { padding: 25px 23px 24px; }
   .hero-visual .card-content { margin-top: 49px; }
-  .hero-visual #flip { width: auto; min-height: 44px; padding-inline: 22px; }
+  .hero-visual .demo-card-face [data-flip] { width: auto; min-height: 44px; padding-inline: 22px; }
 }
 
 @media (max-width: 700px) {
-  .hero-visual .demo-card { min-height: 320px; padding-block: 22px 20px; }
+  .hero-visual .demo-card { min-height: 320px; }
+  .hero-visual .demo-card-face { padding-block: 22px 20px; }
   .hero-visual .card-content { margin-top: 36px; }
-  .hero-visual #flip { margin-top: 20px; }
+  .hero-visual .demo-card-face [data-flip] { margin-top: 20px; }
 }
 
 @media (max-width: 480px) {
   .hero-visual { width: min(100% - 10px, 380px); }
-  .hero-visual .demo-card { min-height: 300px; padding: 20px 18px 18px; }
+  .hero-visual .demo-card { min-height: 300px; }
+  .hero-visual .demo-card-face { padding: 20px 18px 18px; }
   .hero-visual .card-content { margin-top: 30px; }
   .hero-visual .card-content h2 { font-size: 34px; }
-  .hero-visual #flip { font-size: 13px; }
+  .hero-visual .demo-card-face [data-flip] { font-size: 13px; }
   .hero-visual .visual-bottom strong { font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-visual .demo-card-inner { transition-duration: 0.01ms; }
 }

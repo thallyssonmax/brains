@@ -34,11 +34,15 @@
 }
 .site-header .site-brand:hover { color: #17233b; text-decoration: none; }
 .site-header .site-mark {
-  display: grid;
-  place-items: center;
+  display: block;
   width: 37px;
   height: 37px;
   border-radius: 12px;
+  object-fit: contain;
+}
+.site-header span.site-mark {
+  display: grid;
+  place-items: center;
   background: #2458e6;
   color: #fff;
   font-size: 24px;
@@ -182,7 +186,8 @@
 @media (max-width: 480px) {
   .site-header .site-navigation { width: calc(100% - 32px); }
   .site-header .site-brand { gap: 7px; font-size: 19px; }
-  .site-header .site-mark { width: 32px; height: 32px; font-size: 22px; }
+  .site-header .site-mark { width: 32px; height: 32px; }
+  .site-header span.site-mark { font-size: 22px; }
 }
 @media (max-width: 360px) {
   .site-header .site-navigation { height: 68px; min-height: 68px; }
