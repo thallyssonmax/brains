@@ -15,13 +15,19 @@ export function reviewQueue(db:Library,now=new Date(),areaId?:string):Card[]{
  const fresh=active.filter(c=>!reviewed.has(c.id)&&!c.memory).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
  return [...due,...fresh].slice(0,remaining);
 }
-export function applyReview(db:Library,event:ReviewEvent){
+
+function shouldRepeatInSession(event:ReviewEvent):boolean {
+ return Boolean(event.sessionId&&!event.retryOf&&(!event.known||event.introduced===true));
+}
+
+export function applyReview(db:Library,event:ReviewEvent):boolean {
  db.reviews??=[];
- if(db.reviews.some(e=>e.id===event.id))return;
+ const recorded=db.reviews.find(e=>e.id===event.id);
+ if(recorded)return shouldRepeatInSession(recorded);
  const card=db.cards.find(c=>c.id===event.cardId);
  const original=event.retryOf?db.reviews.find(e=>e.id===event.retryOf):undefined;
  const active=card&&db.decks.some(d=>d.id===card.deckId&&!d.deleted&&!d.archived&&db.areas.some(a=>a.id===d.areaId&&!a.deleted&&!a.archived))&&!card.deleted&&!card.archived;
- const retry=!!(original&&!original.known&&!original.retryOf&&event.sessionId&&original.sessionId===event.sessionId&&original.cardId===event.cardId&&new Date(event.at)>=new Date(original.at)&&!db.reviews.some(e=>e.retryOf===original.id)&&db.reviews.filter(e=>e.cardId===event.cardId).at(-1)?.id===original.id);
+ const retry=!!(original&&shouldRepeatInSession(original)&&original.sessionId===event.sessionId&&original.cardId===event.cardId&&new Date(event.at)>=new Date(original.at)&&!db.reviews.some(e=>e.retryOf===original.id)&&db.reviews.filter(e=>e.cardId===event.cardId).at(-1)?.id===original.id);
  if(!active||(event.retryOf?!retry:!reviewQueue(db,new Date(event.at),db.decks.find(d=>d.id===card!.deckId)?.areaId).some(c=>c.id===card!.id)))throw Error('conflict');
  if(!card)throw Error('conflict');
  const at=new Date(event.at);
@@ -30,8 +36,10 @@ export function applyReview(db:Library,event:ReviewEvent){
  const floor=nextStudyDay(at,db.preferences.timezone);
  if(result.card.due<floor){result.card.due=floor;result.card.scheduled_days=Math.max(1,result.card.scheduled_days);result.log.scheduled_days=result.card.scheduled_days}
  result.card.due=startStudyDay(result.card.due,db.preferences.timezone);
- db.reviews.push({...event,introduced:!card.memory,log:result.log});
+ const review={...event,introduced:!card.memory,log:result.log};
+ db.reviews.push(review);
  card.memory=result.card;card.version++;card.updatedAt=event.at;
+ return shouldRepeatInSession(review);
 }
 
 // Find the first instant of the next local calendar day, including DST changes.

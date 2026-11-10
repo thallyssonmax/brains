@@ -66,7 +66,32 @@ useEffect(()=>{document.documentElement.lang=data?.preferences.locale==='pt'?'pt
  const navigate=(next:Page,id=areaId)=>{const path=next==='home'?paths.home:next==='settings'?paths.settings:next==='decks'?paths.areas:id?areaPath(id):paths.areas;go(path,{state:next==='editor'||next==='explore'?{view:next}:null})};
  async function mutate(fn:(library:Library)=>void){if(!data)return false;setBusy(true);try{const updated=await store.mutate(data.revision,fn);setData(updated);setError('');return true}catch(e){setError(errorText(e,t));return false}finally{setBusy(false)}}
  function revealReview(){if(busy||flipAnimating||reviewLock.current)return;cancelSpeech();if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){setBack(true);return}setFlipAnimating(true);setBack(true)}
- async function confirmReview(known:boolean){const card=explore[index];if(!card||!back||busy||flipAnimating||reviewLock.current)return;reviewLock.current=true;cancelSpeech();const previous=data?.reviews?.find(event=>event.sessionId===sessionId&&event.cardId===card.id&&!event.retryOf);const event={id:sessionId+':'+index,sessionId,retryOf:previous?.id,cardId:card.id,at:new Date().toISOString(),known};let saved=false;try{saved=await mutate(library=>{applyReview(library,event)});if(saved){recordEngagementConversion('review');if(!known&&!previous)setExplore(cards=>[...cards,card]);else if(index+1===explore.length){setSessionCompleted(true);void cloud?.rpc('brains_review_session_completed',{p_session_id:sessionId}).then(()=>{},()=>{});recordEngagementConversion('session')}setBack(false);setIndex(index+1)}}finally{if(!saved)reviewLock.current=false}}
+ async function confirmReview(known:boolean){
+  const card=explore[index];
+  if(!card||!back||busy||flipAnimating||reviewLock.current)return;
+  reviewLock.current=true;
+  cancelSpeech();
+  const previous=data?.reviews?.find(event=>event.sessionId===sessionId&&event.cardId===card.id&&!event.retryOf);
+  const event={id:sessionId+':'+index,sessionId,retryOf:previous?.id,cardId:card.id,at:new Date().toISOString(),known};
+  let saved=false;
+  let repeatInSession=false;
+  try{
+   saved=await mutate(library=>{repeatInSession=applyReview(library,event)});
+   if(!saved)return;
+   recordEngagementConversion('review');
+   if(repeatInSession){
+    setExplore(cards=>[...cards,card]);
+   }else if(index+1===explore.length){
+    setSessionCompleted(true);
+    void cloud?.rpc('brains_review_session_completed',{p_session_id:sessionId}).then(()=>{},()=>{});
+    recordEngagementConversion('session');
+   }
+   setBack(false);
+   setIndex(index+1);
+  }finally{
+   if(!saved)reviewLock.current=false;
+  }
+ }
  async function edit(card:Card){const existing=drafts.find(d=>d.card.id===card.id);const next=existing??{id:crypto.randomUUID(),card,baseVersion:card.version,revision:0,savedAt:new Date().toISOString()};setBusy(true);try{const saved=existing??next;setDraft(saved);setDrafts(await store.drafts());navigate('editor',data?.decks.find(d=>d.id===card.deckId)?.areaId)}catch(e){setError(errorText(e,t))}finally{setBusy(false)}}
  const activeDeck=(id:string)=>!!data?.decks.some(d=>d.id===id&&!d.deleted&&!d.archived&&data.areas.some(a=>a.id===d.areaId&&!a.deleted&&!a.archived));
  const setState=async(type:'areas'|'decks'|'cards',id:string,field:'deleted',value:boolean)=>{await mutate(db=>{const item=db[type].find(i=>i.id===id);if(!item)return;if(field==='deleted'&&!value)restoreCollectionItem(item);else item[field]=value;if(type==='cards'){const card=item as Card;card.version++;card.updatedAt=new Date().toISOString()}})};

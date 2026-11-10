@@ -1,7 +1,8 @@
 import {describe,it,expect} from 'vitest';
-import {createEmptyCard} from 'ts-fsrs';
+import {createEmptyCard,Rating} from 'ts-fsrs';
 import {initialLibrary,blankCard} from './model';
-import {applyReview,reviewQueue,nextStudyDay,startStudyDay,effectiveDue} from './scheduler';
+import {dailyProgress} from './review';
+import {applyReview,reviewQueue,nextStudyDay,startStudyDay,effectiveDue,scheduler} from './scheduler';
 function fixture(){const db=initialLibrary();db.preferences.timezone='UTC';db.preferences.goal=1;db.preferences.newLimit=1;db.areas=[{id:'a',name:'English',archived:false,deleted:false}];db.decks=[{id:'d',areaId:'a',name:'English',language:'en',archived:false,deleted:false}];db.cards=[blankCard(db.decks[0]),blankCard(db.decks[0])];return db}
 const now=new Date('2026-09-13T12:00:00Z');
 describe('spaced reviews',()=>{
@@ -43,6 +44,39 @@ describe('spaced reviews',()=>{
 });
 
 describe('daily-only scheduling',()=>{
+ it('reinforces a first-ever correct answer once without using another daily slot',()=>{
+  const db=fixture();
+  const card=reviewQueue(db,now)[0];
+  card.createdAt='2026-08-01T12:00:00Z';
+  const first={id:'first',sessionId:'s',cardId:card.id,at:now.toISOString(),known:true};
+  expect(applyReview(db,first)).toBe(true);
+  expect(db.reviews?.[0]).toMatchObject({known:true,introduced:true,log:{rating:Rating.Good}});
+  expect(reviewQueue(db,now)).toHaveLength(0);
+
+  const later=new Date('2026-09-13T12:05:00Z');
+  const retry={...first,id:'retry',retryOf:first.id,at:later.toISOString()};
+  const expected=scheduler.next(card.memory!,later,Rating.Good).card.due;
+  expect(()=>applyReview(db,{...retry,sessionId:'different'})).toThrow('conflict');
+  expect(applyReview(db,retry)).toBe(false);
+  expect(db.reviews?.[1]).toMatchObject({known:true,introduced:false,log:{rating:Rating.Good}});
+  expect(()=>applyReview(db,{...retry,id:'third'})).toThrow('conflict');
+  expect(dailyProgress(db,later)).toEqual({cards:1,attempts:2,correct:2});
+  expect(card.memory!.due).toEqual(startStudyDay(expected,db.preferences.timezone));
+  expect(card.memory!.due>nextStudyDay(now,db.preferences.timezone)).toBe(true);
+ });
+
+ it.each([true,false])('keeps the prior retry policy for a previously studied card (known=%s)',known=>{
+  const db=fixture();
+  const card=reviewQueue(db,now)[0];
+  applyReview(db,{id:'historical',cardId:card.id,at:'2026-09-05T12:00:00Z',known:true});
+  const first={id:'first',sessionId:'s',cardId:card.id,at:now.toISOString(),known};
+  expect(applyReview(db,first)).toBe(!known);
+  expect(db.reviews?.[1].introduced).toBe(false);
+  const retry={...first,id:'retry',retryOf:first.id,known:true};
+  if(known)expect(()=>applyReview(db,retry)).toThrow('conflict');
+  else expect(applyReview(db,retry)).toBe(false);
+ });
+
  it('allows one failed-card retry only in its original session',()=>{const db=fixture();const c=reviewQueue(db,now)[0];applyReview(db,{id:'first',sessionId:'s',cardId:c.id,at:now.toISOString(),known:false});expect(reviewQueue(db,new Date('2026-09-13T23:59:59Z'))).toHaveLength(0);expect(()=>applyReview(db,{id:'wrong',sessionId:'other',retryOf:'first',cardId:c.id,at:now.toISOString(),known:true})).toThrow('conflict');applyReview(db,{id:'retry',sessionId:'s',retryOf:'first',cardId:c.id,at:now.toISOString(),known:false});expect(c.memory!.due>=nextStudyDay(now,'UTC')).toBe(true);expect(()=>applyReview(db,{id:'third',sessionId:'s',retryOf:'first',cardId:c.id,at:now.toISOString(),known:false})).toThrow('conflict');expect(db.reviews).toHaveLength(2)});
  it('does not schedule a successful card again today',()=>{const db=fixture();const c=reviewQueue(db,now)[0];applyReview(db,{id:'good',cardId:c.id,at:now.toISOString(),known:true});expect(c.memory!.due>=nextStudyDay(now,'UTC')).toBe(true)});
  it('handles local midnight and daylight saving boundaries',()=>{expect(nextStudyDay(new Date('2026-09-17T02:59:00Z'),'America/Sao_Paulo').toISOString()).toBe('2026-09-17T03:00:00.000Z');expect(nextStudyDay(new Date('2026-03-08T06:30:00Z'),'America/New_York').toISOString()).toBe('2026-03-09T04:00:00.000Z')});
