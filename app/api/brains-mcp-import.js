@@ -9,9 +9,22 @@ const MAX_BATCH=20;
 
 const canonical=value=>value.normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase();
 
+const areaIdSchema=z.string().min(1).max(100);
+const frontSchema=z.string().trim().min(1).max(200);
+
 function activeCardsForArea(library,areaId){
  const deckIds=new Set(library.decks.filter(deck=>deck.areaId===areaId&&!deck.deleted&&!deck.archived).map(deck=>deck.id));
  return library.cards.filter(card=>deckIds.has(card.deckId)&&!card.deleted&&!card.archived);
+}
+
+function cardsByFront(library,areaId){
+ const index=new Map();
+ for(const card of activeCardsForArea(library,areaId)){
+  const front=canonical(card.front.text);
+  if(!index.has(front))index.set(front,new Set());
+  index.get(front).add(canonical(card.back.text));
+ }
+ return index;
 }
 
 function flashcard(deck,front,back,now=new Date().toISOString()){
@@ -29,7 +42,7 @@ function errorResult(error){
   MISSING_AREA:'No active area matches that choice. Call list_areas and ask the user which area to use.',
   MISSING_LIBRARY:'This account has no active Brains area yet. Ask the user to create an area in Brains first.',
   DUPLICATE_CARD:'A card with this front and back already exists in this area. Do not create another copy.',
-  DUPLICATE_FRONT:'A card with this front already exists in this area with a different back. Ask the user to confirm that this is a distinct meaning, then retry with allowDifferentMeaning=true.',
+  DUPLICATE_FRONT:'This front already exists in this area or appears twice in the batch. Run check_duplicate_fronts and present only new cards for approval.',
   CONFLICT:'The Brains library changed during this request. Nothing was overwritten. Call list_areas and retry after confirming the cards with the user.',
   CLOUD_UNAVAILABLE:'Brains could not read the user library. No cards were saved; ask the user to retry later.',
   SAVE_FAILED:'Brains could not confirm the save. Check the library before retrying to avoid duplicates.',
@@ -39,7 +52,7 @@ function errorResult(error){
 }
 
 export function createImportServer(store,account={id:'',email:null}){
- const server=new McpServer({name:'brains-flashcard-import',title:'Brains — Criar flashcard',version:'0.3.4',websiteUrl:APP_ORIGIN,description:'Crie cards de texto no Brains depois de aprovar o conteúdo nesta conversa.',icons:[{src:`${APP_ORIGIN}/brains-plugin-logo-v1.svg`,mimeType:'image/svg+xml',sizes:['256x256']}]},{instructions:"This MCP is connected to a Brains account selected by ChatGPT through OAuth. Whenever the user asks which Brains account is connected, who is signed in, or asks for the account email or ID, ALWAYS call get_connected_account before answering. State the returned email; if no email is available, state the stable account ID. Never say that this integration cannot provide account identity, and never offer listing areas as a substitute. When the user names a target Brains account or says they have multiple connected accounts, also call get_connected_account first and confirm whether this OAuth connection matches the requested account before listing areas or creating cards. If the requested account is not connected, do not use the current account as a substitute; guide the user to ChatGPT Settings > Plugins or Apps > Brains > Connected accounts > Connect another account, when available. After connection, call get_connected_account again and confirm the account. Never claim to switch accounts yourself or access another account through the current connection. If no account is specified, use the OAuth connection selected by ChatGPT. If the user asks which account it is, call get_connected_account and state the result. Call list_areas when the target area is unclear. Draft front and back, show the exact content and target area, and wait for the user to explicitly approve before create_flashcards. Never infer approval from a request to prepare a proposal. Only active, non-archived cards count as duplicates; deleted or archived cards may be recreated. Explain active duplicates and ask for separate explicit confirmation before retrying. Save only the exact approved text. This integration does not transfer images or audio files. Reference voice playback is provided by Brains; recordings are made in the Brains app."});
+ const server=new McpServer({name:'brains-flashcard-import',title:'Brains — Criar flashcard',version:'0.3.4',websiteUrl:APP_ORIGIN,description:'Crie cards de texto no Brains depois de aprovar o conteúdo nesta conversa.',icons:[{src:`${APP_ORIGIN}/brains-plugin-logo-v1.svg`,mimeType:'image/svg+xml',sizes:['256x256']}]},{instructions:"This MCP is connected to a Brains account selected by ChatGPT through OAuth. Whenever the user asks which Brains account is connected, who is signed in, or asks for the account email or ID, ALWAYS call get_connected_account before answering. State the returned email; if no email is available, state the stable account ID. Never say that this integration cannot provide account identity, and never offer listing areas as a substitute. When the user names a target Brains account or says they have multiple connected accounts, also call get_connected_account first and confirm whether this OAuth connection matches the requested account before listing areas or creating cards. If the requested account is not connected, do not use the current account as a substitute; guide the user to ChatGPT Settings > Plugins or Apps > Brains > Connected accounts > Connect another account, when available. After connection, call get_connected_account again and confirm the account. Never claim to switch accounts yourself or access another account through the current connection. If no account is specified, use the OAuth connection selected by ChatGPT. If the user asks which account it is, call get_connected_account and state the result. Call list_areas when the target area is unclear. Call check_duplicate_fronts on the requested fronts in the selected area before presenting any cards for approval. Report existing fronts and repeated entries, then draft and show only the new cards with their exact front, back and target area, and wait for the user to explicitly approve before create_flashcards. Never infer approval from a request to prepare a proposal. Only active, non-archived cards count as duplicates; deleted or archived cards may be recreated. Never save a duplicate front even with a different back. Save only the exact approved text. This integration does not transfer images or audio files. Reference voice playback is provided by Brains; recordings are made in the Brains app."});
 
  server.registerTool('get_connected_account',{
   title:'Identificar conta Brains conectada',
@@ -72,13 +85,40 @@ export function createImportServer(store,account={id:'',email:null}){
   }catch(error){return errorResult(error)}
  });
 
+ server.registerTool('check_duplicate_fronts',{
+  title:'Conferir frentes repetidas no Brains',
+  description:'Chame antes de apresentar cards para aprovação. Confere até 20 frentes inteiras nos cards ativos da área escolhida e na própria lista. Os resultados seguem a ordem das frentes enviadas. Informe quais já existem e apresente apenas as marcadas como new para aprovação.',
+  inputSchema:{areaId:areaIdSchema,fronts:z.array(frontSchema).min(1).max(MAX_BATCH)},
+  outputSchema:{results:z.array(z.enum(['new','existing','repeated_in_batch']))},
+  annotations:{readOnlyHint:true,destructiveHint:false,openWorldHint:false}
+ },async({areaId,fronts})=>{
+  try{
+   const row=await store.read();
+   if(!row)throw Error('MISSING_LIBRARY');
+   const library=row.document;
+   if(!Array.isArray(library?.areas)||!Array.isArray(library?.decks)||!Array.isArray(library?.cards))throw Error('INVALID_LIBRARY');
+   const area=library.areas.find(item=>item.id===areaId&&!item.deleted&&!item.archived);
+   if(!area||!library.decks.some(deck=>deck.areaId===areaId&&!deck.deleted&&!deck.archived))throw Error('MISSING_AREA');
+   const existing=new Set(activeCardsForArea(library,areaId).map(card=>canonical(card.front.text)));
+   const seen=new Set();
+   const results=fronts.map(front=>{
+    const key=canonical(front);
+    const status=existing.has(key)?'existing':seen.has(key)?'repeated_in_batch':'new';
+    seen.add(key);
+    return status;
+   });
+   const response={results};
+   return {structuredContent:response,content:[{type:'text',text:JSON.stringify(response)}]};
+  }catch(error){return errorResult(error)}
+ });
+
  server.registerTool('create_flashcards',{
   title:'Salvar cards aprovados no Brains',
-  description:'Salva de 1 a 20 cards de texto na área escolhida da conta autenticada. IMPORTANTE: só chame depois de mostrar ao usuário a área e o texto exato de todos os cards e receber aprovação explícita nesta conversa. Esta ação grava os cards imediatamente no Brains. Não recebe imagem nem arquivo de áudio; a voz de referência do app funciona nos dois lados.',
-  inputSchema:{areaId:z.string().min(1).max(100),cards:z.array(z.object({front:z.string().trim().min(1).max(200),back:z.string().trim().min(1).max(800)}).strict()).min(1).max(MAX_BATCH),allowDifferentMeaning:z.boolean().optional().describe('Use true only if the user explicitly approved a distinct meaning for a front that already exists in the chosen area.')},
+  description:'Salva de 1 a 20 cards de texto na área escolhida da conta autenticada. Use check_duplicate_fronts antes de apresentar os cards. IMPORTANTE: só chame depois de mostrar ao usuário a área e o texto exato de todos os cards e receber aprovação explícita nesta conversa. Esta ação grava os cards imediatamente no Brains. Não recebe imagem nem arquivo de áudio; a voz de referência do app funciona nos dois lados.',
+  inputSchema:{areaId:areaIdSchema,cards:z.array(z.object({front:frontSchema,back:z.string().trim().min(1).max(800)}).strict()).min(1).max(MAX_BATCH),allowDifferentMeaning:z.boolean().optional().describe("Deprecated. Duplicate fronts are always blocked.")},
   outputSchema:{saved:z.boolean(),areaName:z.string(),count:z.number(),cards:z.array(z.object({front:z.string(),back:z.string()}))},
   annotations:{readOnlyHint:false,destructiveHint:false,idempotentHint:false,openWorldHint:false}
- },async({areaId,cards,allowDifferentMeaning=false})=>{
+ },async({areaId,cards})=>{
   try{
    if(!cards.length||cards.length>MAX_BATCH)throw Error('SAVE_FAILED');
    for(let attempt=0;attempt<3;attempt++){
@@ -94,18 +134,13 @@ export function createImportServer(store,account={id:'',email:null}){
     const decks=library.decks.filter(item=>item.areaId===area.id&&!item.deleted&&!item.archived);
     const deck=decks[0];
     if(!deck)throw Error('MISSING_AREA');
-    const seen=new Map();
-    for(const card of activeCardsForArea(library,area.id)){
-     const front=canonical(card.front.text),back=canonical(card.back.text);
-     if(!seen.has(front))seen.set(front,new Set());seen.get(front).add(back);
-    }
-    const batchSeen=new Map();
+    const seen=cardsByFront(library,area.id);
     for(const card of cards){
      const front=canonical(card.front),back=canonical(card.back);
-     const stored=seen.get(front)??new Set(),pending=batchSeen.get(front)??new Set();
-     if(stored.has(back)||pending.has(back))throw Error('DUPLICATE_CARD');
-     if((stored.size||pending.size)&&!allowDifferentMeaning)throw Error('DUPLICATE_FRONT');
-     pending.add(back);batchSeen.set(front,pending);
+     const matches=seen.get(front);
+     if(matches?.has(back))throw Error('DUPLICATE_CARD');
+     if(matches)throw Error('DUPLICATE_FRONT');
+     seen.set(front,new Set([back]));
     }
     const now=new Date().toISOString();
     const updated=structuredClone(library);

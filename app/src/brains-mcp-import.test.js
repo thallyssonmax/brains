@@ -39,11 +39,12 @@ describe('authenticated Brains card tools',()=>{
   expect(isAllowedChatGPTClientId('',env)).toBe(false);
  });
 
- it('exposes only area listing and an explicitly approved text-card writer',async()=>withClient(fixture().store,async client=>{
+ it('exposes a read-only duplicate check and an explicitly approved text-card writer',async()=>withClient(fixture().store,async client=>{
   const {tools}=await client.listTools();
-  expect(tools.map(tool=>tool.name)).toEqual(['get_connected_account','list_areas','create_flashcards']);
-  expect(tools[2].inputSchema.properties).not.toHaveProperty('file');
-  expect(tools[2].annotations).toMatchObject({readOnlyHint:false,destructiveHint:false});
+  expect(tools.map(tool=>tool.name)).toEqual(['get_connected_account','list_areas','check_duplicate_fronts','create_flashcards']);
+  expect(tools[2].annotations.readOnlyHint).toBe(true);
+  expect(tools[3].inputSchema.properties).not.toHaveProperty('file');
+  expect(tools[3].annotations).toMatchObject({readOnlyHint:false,destructiveHint:false});
  }));
 
  it('identifies the authenticated account without exposing library data',async()=>{
@@ -128,7 +129,7 @@ describe('authenticated Brains card tools',()=>{
   expect(updated.cards[1].memory).toBeUndefined();
  });
 
- it('prevents duplicate cards and distinct meanings unless the user approved them',async()=>{
+ it('rejects duplicate fronts even when an older client sends its override',async()=>{
   const db=fixture();
   const existing={id:'existing',deckId:'deck-en',front:{text:'to bet'},back:{text:'I do not like to bet.'},version:1,createdAt:'2026-01-01',updatedAt:'2026-01-01',archived:false,deleted:false};
   db.row.document.cards.push(existing);
@@ -138,7 +139,27 @@ describe('authenticated Brains card tools',()=>{
    const meaning=await client.callTool({name:'create_flashcards',arguments:{areaId:'area-en',cards:[{front:'to bet',back:'She bet on the blue horse.'}]}});
    expect(meaning.isError).toBe(true);expect(meaning.content[0].text).toContain('DUPLICATE_FRONT');
    const approved=await client.callTool({name:'create_flashcards',arguments:{areaId:'area-en',allowDifferentMeaning:true,cards:[{front:'to bet',back:'She bet on the blue horse.'}]}});
-   expect(approved.structuredContent.saved).toBe(true);
+   expect(approved.isError).toBe(true);
+   expect(approved.content[0].text).toContain('DUPLICATE_FRONT');
+   expect(db.saved).toHaveLength(0);
+  });
+ });
+
+ it('checks entire active fronts in one batch without saving',async()=>{
+  const db=fixture();
+  db.row.document.cards.push(
+   {deckId:'deck-en',front:{text:'Possessive of It'},back:{text:'Its original color.'}},
+   {deckId:'deck-en',front:{text:'Figure out'},back:{text:'Understand.'}},
+   {deckId:'deck-en',front:{text:'Need'},back:{text:'Require.'},deleted:true}
+  );
+  await withClient(db.store,async client=>{
+   const result=await client.callTool({name:'check_duplicate_fronts',arguments:{
+    areaId:'area-en',fronts:['Its','FIGURE   OUT','Need','its','figure']
+   }});
+   expect(result.structuredContent.results).toEqual(['new','existing','new','repeated_in_batch','new']);
+   const save=await client.callTool({name:'create_flashcards',arguments:{areaId:'area-en',cards:[{front:'Its',back:'First.'},{front:'ITS',back:'Second.'}]}});
+   expect(save.content[0].text).toContain('DUPLICATE_FRONT');
+   expect(db.saved).toHaveLength(0);
   });
  });
 
