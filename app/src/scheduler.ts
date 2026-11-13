@@ -34,7 +34,12 @@ export function applyReview(db:Library,event:ReviewEvent):boolean {
  const previous:Memory=card.memory?{...card.memory,due:new Date(card.memory.due),last_review:card.memory.last_review?new Date(card.memory.last_review):undefined}:createEmptyCard(at);
  const result=scheduler.next(previous,at,event.known?Rating.Good:Rating.Again);
  const floor=nextStudyDay(at,db.preferences.timezone);
- if(result.card.due<floor){result.card.due=floor;result.card.scheduled_days=Math.max(1,result.card.scheduled_days);result.log.scheduled_days=result.card.scheduled_days}
+ const reinforceTomorrow=retry&&original?.introduced===true&&!event.known;
+ if(reinforceTomorrow||result.card.due<floor){
+  result.card.due=floor;
+  result.card.scheduled_days=reinforceTomorrow?1:Math.max(1,result.card.scheduled_days);
+  result.log.scheduled_days=result.card.scheduled_days;
+ }
  result.card.due=startStudyDay(result.card.due,db.preferences.timezone);
  const review={...event,introduced:!card.memory,log:result.log};
  db.reviews.push(review);

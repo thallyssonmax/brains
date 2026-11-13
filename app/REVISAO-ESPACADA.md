@@ -25,7 +25,7 @@ O algoritmo roda no cliente; banco mantém o resultado e o histórico. Não exis
 
 - Um card novo é um card sem estado FSRS, independentemente da data de cadastro. Na primeira resposta confirmada, ele é colocado uma vez no fim da sessão, tanto com **Sei** quanto com **Não sei**.
 - Um card já estudado só volta na mesma sessão se a primeira resposta daquela sessão for **Não sei**. A tentativa extra recebe uma avaliação real e não gera uma terceira exibição.
-- A próxima data vem do FSRS, inclusive quando o aluno acerta as duas tentativas. A volta obrigatória se limita à própria sessão. A revisão seguinte pode cair no dia seguinte ou em uma data posterior.
+- Se a segunda tentativa de um card novo terminar em **Não sei**, o card entra na fila a partir da meia-noite do dia seguinte, no fuso da conta. A revisão ocupa uma vaga da meta quando for feita. Se o aluno pular o dia, o card fica pendente. Para um acerto na segunda tentativa e para as revisões posteriores, o FSRS calcula a próxima data.
 - A tentativa extra usa `sessionId` e `retryOf`. O agendador exige a sessão original, o mesmo card ativo e uma resposta original que permita repetição. Se o aluno encerrar ou recarregar antes do reforço, vale o agendamento já salvo na primeira tentativa.
 - A regra vale a partir do primeiro estudo, inclusive para cards já cadastrados que nunca foram revisados. Cards já estudados mantêm suas datas e seu histórico. A atualização não exige migração de dados nem recálculo em massa.
 

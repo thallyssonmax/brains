@@ -44,6 +44,18 @@ describe('spaced reviews',()=>{
 });
 
 describe('daily-only scheduling',()=>{
+ it('makes a new card missed on its second attempt due at the next local midnight',()=>{
+  const db=fixture();
+  db.preferences.timezone='America/Sao_Paulo';
+  const card=reviewQueue(db,now)[0];
+  const first={id:'first',sessionId:'s',cardId:card.id,at:now.toISOString(),known:true};
+  expect(applyReview(db,first)).toBe(true);
+  expect(applyReview(db,{...first,id:'retry',retryOf:first.id,known:false})).toBe(false);
+  const due=new Date('2026-09-14T03:00:00Z');
+  expect(card.memory?.due).toEqual(due);
+  expect(reviewQueue(db,new Date(+due-1))).toHaveLength(0);
+  expect(reviewQueue(db,due).map(item=>item.id)).toEqual([card.id]);
+ });
  it('reinforces a first-ever correct answer once without using another daily slot',()=>{
   const db=fixture();
   const card=reviewQueue(db,now)[0];
