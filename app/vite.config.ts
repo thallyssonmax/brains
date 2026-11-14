@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import {defineConfig,type Plugin} from 'vite';
 // Match production's multi-page fallback during local development and preview.
 function productFallback():Plugin {
@@ -14,4 +15,4 @@ function productFallback():Plugin {
  })};
  return {name:'product-fallback',configureServer:install,configurePreviewServer:install};
 }
-export default defineConfig({plugins:[productFallback()],build:{rollupOptions:{input:{landing:'index.html',product:'product.html',styleGuide:'style-guide/index.html'}}}});
+export default defineConfig({plugins:[productFallback(),tailwindcss()],build:{rollupOptions:{input:{landing:'index.html',product:'product.html',styleGuide:'style-guide/index.html'}}}});

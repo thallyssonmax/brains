@@ -2,18 +2,36 @@ import {createEmptyCard,fsrs,Rating,type Card as Memory} from 'ts-fsrs';
 import type {Library,Card} from './model';
 import {dayKey,type ReviewEvent} from './review';
 export const scheduler=fsrs({request_retention:0.9,enable_fuzz:false,enable_short_term:false});
-export function reviewQueue(db:Library,now=new Date(),areaId?:string):Card[]{
+function orderedReviewCards(db: Library, now: Date, areaId?: string) {
  const areas=new Set(db.areas.filter(a=>!a.archived&&!a.deleted).map(a=>a.id));
- const decks=new Set(db.decks.filter(d=>!d.archived&&!d.deleted&&(!areaId||d.areaId===areaId)&&areas.has(d.areaId)).map(d=>d.id));
+ const decks=new Map(db.decks.filter(d=>!d.archived&&!d.deleted&&(!areaId||d.areaId===areaId)&&areas.has(d.areaId)).map(d=>[d.id,d.areaId]));
  const active=db.cards.filter(c=>!c.archived&&!c.deleted&&decks.has(c.deckId));
  const today=dayKey(now,db.preferences.timezone);
  const reviewed=new Set((db.reviews??[]).filter(e=>dayKey(new Date(e.at),db.preferences.timezone)===today).map(e=>e.cardId));
  const remaining=Math.max(0,db.preferences.goal-reviewed.size);
- if(!remaining)return [];
+ if(!remaining)return { remaining, decks, cards: [] as Card[] };
  const lastReviews=new Map((db.reviews??[]).map(event=>[event.cardId,event]));
  const due=active.filter(c=>!reviewed.has(c.id)&&c.memory).map(card=>({card,due:effectiveDueFromReview(db,card,lastReviews.get(card.id))!})).filter(entry=>entry.due<=now).sort((a,b)=>+a.due-+b.due).map(entry=>entry.card);
  const fresh=active.filter(c=>!reviewed.has(c.id)&&!c.memory).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
- return [...due,...fresh].slice(0,remaining);
+ return { remaining, decks, cards: [...due,...fresh] };
+}
+
+// Partition the full ordered queue before applying each area's daily limit.
+export function reviewQueues(db: Library, now = new Date()) {
+ const { remaining, decks, cards } = orderedReviewCards(db, now);
+ const areas = new Map<string, Card[]>();
+ for (const card of cards) {
+  const areaId = decks.get(card.deckId)!;
+  const queue = areas.get(areaId);
+  if (!queue) areas.set(areaId, [card]);
+  else if (queue.length < remaining) queue.push(card);
+ }
+ return { queue: cards.slice(0, remaining), areas };
+}
+
+export function reviewQueue(db: Library, now = new Date(), areaId?: string): Card[] {
+ const { remaining, cards } = orderedReviewCards(db, now, areaId);
+ return cards.slice(0, remaining);
 }
 
 function shouldRepeatInSession(event:ReviewEvent):boolean {

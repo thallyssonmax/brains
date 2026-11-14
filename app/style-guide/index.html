@@ -25,7 +25,44 @@
     <section class="guide-section" aria-labelledby="type"><h2 id="type">Tipografia</h2><div class="guide-type"><div><span class="guide-caption">Título principal</span><h1>As palavras que você aprende.</h1></div><div><span class="guide-caption">Título de seção</span><h2>Seu vocabulário. Suas palavras.</h2></div><div><span class="guide-caption">Título de card</span><h3>Crie seus cartões</h3></div><div><span class="guide-caption">Texto de leitura</span><p>Adicione o Brains à tela inicial e pratique quando quiser.</p></div></div></section>
     <section class="guide-section" aria-labelledby="actions"><h2 id="actions">Ações e estados</h2><div class="guide-actions"><a class="button" href="/login">Testar grátis</a><button class="button secondary" type="button">Conferir significado</button><button class="primary" type="button">Revisar</button><button class="secondary" type="button">Voltar</button><a class="text-link" href="#cards">Ver cartões</a></div><p class="guide-note">Use Tab para conferir o foco visível. A redução de movimento do dispositivo também se aplica aos componentes.</p></section>
     <section class="guide-section" id="cards" aria-labelledby="cards-heading"><h2 id="cards-heading">Cartões e superfícies</h2><div class="guide-grid"><article class="level"><span class="level-stage">01 / COMEÇANDO</span><h3>Um apoio em português.</h3><div class="sample-front"><span class="card-label">FRENTE</span><p>Tired</p></div><div class="sample-back"><span class="card-label">VERSO</span><p>Cansado.</p></div></article><article class="panel guide-panel"><h3>Área de estudo</h3><p>Superfície do aplicativo para organizar seus cartões.</p><button class="secondary" type="button">Gerenciar área</button></article></div></section>
+    <section class="guide-section" aria-labelledby="study-heading">
+      <h2 id="study-heading">Revisão de flashcards</h2>
+      <p>Use alvos de toque de pelo menos 44 × 44 px para controles independentes. Mantenha o foco visível e separe ações vizinhas.</p>
+      <div class="guide-grid">
+        <article class="panel guide-panel"><h3>Frente</h3><p>figure out</p><button class="primary" type="button">Mostrar resposta</button></article>
+        <article class="panel guide-panel"><h3>Verso</h3><p>Descobrir ou entender algo.</p><div class="actions"><button class="good" type="button">Sei</button><button class="bad" type="button">Não sei</button></div></article>
+      </div>
+      <p class="guide-note">Ao revelar, mova o foco para o verso. Ao confirmar, mostre o estado de salvamento. Em caso de falha, mantenha a resposta visível para permitir nova tentativa.</p>
+      <button class="primary" type="button" disabled>Salvando…</button>
+      <p class="error">Não foi possível salvar a resposta. Tente novamente.</p>
+    </section>
     <section class="guide-section" aria-labelledby="forms"><h2 id="forms">Campos</h2><div class="guide-form"><label for="guide-email">E-mail</label><input id="guide-email" type="email" placeholder="nome@exemplo.com"><label for="guide-area">Área</label><select id="guide-area"><option>Inglês</option><option>Espanhol</option></select></div></section>
+    <section class="guide-section product-spec" aria-labelledby="product-spec">
+      <h2 id="product-spec">Padrões do app</h2>
+      <p>Comece pelo celular. Use a mesma hierarquia e o mesmo alinhamento em Hoje, Áreas e Configurações.</p>
+      <h3>Componentes de formulário</h3>
+      <p>Configurações usa Input e Native Select, adaptados do shadcn/ui. Os campos usam texto de 16 px, altura mínima de 44 px e foco visível. O seletor mantém o comportamento nativo do celular e reserva espaço para a seta.</p>
+      <h3>Tipografia</h3>
+      <p>Inter, com fontes do sistema como alternativa. Tamanhos em rem e entrelinhas proporcionais permitem ampliar o texto.</p>
+      <div class="guide-grid">
+        <article class="panel"><strong>Título de página</strong><p><code>--type-page</code> · 29 px no mobile, 32 px a partir de 761 px · <code>--weight-bold</code> 700 · <code>--leading-heading</code> 1,15</p></article>
+        <article class="panel"><strong>Título de seção e subtítulo de card</strong><p><code>--type-section</code> · 20 px (18 px em títulos de áreas no mobile) · <code>--weight-bold</code> 700 · <code>--leading-section</code> 1,25</p></article>
+        <article class="panel"><strong>Texto de leitura</strong><p><code>--type-body</code> · 16 px · peso regular 400 · <code>--leading-body</code> 1,6</p></article>
+        <article class="panel"><strong>Labels e texto auxiliar</strong><p><code>--type-label</code> · 14 px · 400 para apoio, <code>--weight-label</code> 650 para labels · <code>--leading-label</code> 1,5</p></article>
+        <article class="panel"><strong>Frente do flashcard</strong><p><code>--type-prompt</code> · 30 / 36 / 42 px · 700 · entrelinha 1,15</p></article>
+        <article class="panel"><strong>Verso do flashcard</strong><p><code>--type-answer</code> · 22 px no mobile, 26 px em telas maiores · <code>--weight-medium</code> 500 · <code>--leading-answer</code> 1,2 / 1,4</p></article>
+      </div>
+      <h3>Espaçamento</h3>
+      <p>A escala usa múltiplos de 4 px. <code>--space-1</code> vale 4 px, <code>--space-2</code> vale 8 px, e assim por diante. Use 8 px entre rótulo e campo, 12–16 px entre itens de uma lista ou grade, 20–24 px dentro de painéis e 32 px antes de uma nova seção. Preserve alvos de toque de 44 × 44 px para controles independentes.</p>
+      <h3>Containers responsivos</h3>
+      <div class="guide-grid">
+        <article class="panel"><strong>Mobile · até 760 px</strong><p>Conteúdo até 540 px, margem interna lateral de 20 px e topo de 24 px. Até 350 px, a margem interna lateral cai para 16 px. A navegação fica no rodapé.</p></article>
+        <article class="panel"><strong>Tablet · 761–1023 px</strong><p>Barra lateral de 220 px e coluna de conteúdo com até 860 px, margem interna lateral de 24 px e topo de 32 px.</p></article>
+        <article class="panel"><strong>Desktop · a partir de 1024 px</strong><p>Estrutura até 1120 px, com a mesma coluna de conteúdo. Margem interna lateral de 48 px e topo de 40 px.</p></article>
+      </div>
+      <p class="guide-note"><code>--container-shell</code>, <code>--container-content</code>, <code>--container-gutter</code> e <code>--container-top</code> definem a estrutura. Não use a quantidade de conteúdo de cada página para decidir a largura. Reserve exceções para superfícies com necessidades próprias, como diálogos.</p>
+    </section>
+    <section class="guide-section" aria-labelledby="ui-components"><h2 id="ui-components">Componentes do aplicativo</h2><p>Botões, campos, seletores e superfícies usam componentes locais adaptados do padrão shadcn/ui em <code>src/components/ui</code>. Aplique os tokens do Brains nos componentes compartilhados e mantenha a lógica nas telas.</p><p>Use ícones do Lucide com rótulos visíveis ou nomes acessíveis em ações sem texto. Se o ícone acompanhar um rótulo, oculte-o de leitores de tela. Select e Checkbox usam Radix UI para manter o visual do Brains e suportar teclado e leitores de tela. Feedback de pressão usa 120 ms, menus 140 ms, indicadores 180 ms e diálogos 200 ms na entrada e 140 ms na saída. A curva padrão é <code>[0.16, 1, 0.3, 1]</code>. Setas que indicam expansão giram 180° com o token <code>--motion-feedback</code> e respeitam a preferência por movimento reduzido.</p></section>
     <section class="guide-section" aria-labelledby="layout"><h2 id="layout">Layout e movimento</h2><p>O container limita a leitura e adapta os grids ao espaço disponível. Cards usam raios de 18–24 px, sombras suaves e deslocamento discreto ao passar o ponteiro. As interações respeitam a preferência por movimento reduzido.</p><div class="guide-rhythm"><span>8</span><span>16</span><span>24</span><span>32</span><span>48</span></div></section>
     <section class="guide-section" aria-labelledby="pages"><h2 id="pages">Páginas públicas</h2><p>Confira os componentes no contexto final: <a href="/plugin-chatgpt/">Plugin do ChatGPT</a>, <a href="/support/">Suporte</a>, <a href="/privacy/">Privacidade</a> e <a href="/termos-de-uso/">Termos de Uso</a>.</p></section>
   </main>

@@ -1,0 +1,185 @@
+/* Compile component utilities without replacing the existing app reset. */
+@import "tailwindcss/utilities.css" source(none);
+
+input[data-slot="input"]:not([type=file], [type=checkbox], [type=radio], [type=hidden]),
+textarea[data-slot="textarea"] {
+  min-block-size: var(--control-touch-size);
+  border-radius: var(--control-radius);
+  font-size: var(--type-body);
+}
+
+[data-slot="button"].back,
+[data-slot="button"].dialog-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+[data-slot="button"] .action-icon {
+  display: inline-block;
+  vertical-align: -0.16em;
+  flex: none;
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+.bottom .nav-icon { margin-inline: auto; }
+
+
+/* Feedback for touch and short transitions at changes of context. */
+@media (prefers-reduced-motion: no-preference) {
+  dialog[open]:not([data-motion-dialog]) {
+    animation: ui-appear 140ms cubic-bezier(.16,1,.3,1);
+  }
+
+  @keyframes ui-appear {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+[data-slot="select-trigger"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--control-touch-size);
+  margin: var(--space-2) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid #d8e0ee;
+  border-radius: var(--control-radius);
+  background: white;
+  text-align: start;
+}
+[data-slot="select-trigger"] svg { flex: none; color: #526078; }
+[data-slot="select-content"] {
+  z-index: 100;
+  width: var(--radix-select-trigger-width);
+  max-height: var(--radix-select-content-available-height);
+  border: 1px solid #d8e0ee;
+  border-radius: var(--control-radius);
+  background: white;
+  box-shadow: 0 8px 24px #17233b24;
+}
+[data-slot="select-viewport"] { padding: var(--space-1); }
+[data-slot="select-option"], [data-slot="select-scroll"] {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+[data-slot="select-option"] {
+  justify-content: space-between;
+  min-height: var(--control-touch-size);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--space-2);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+[data-slot="select-option"][data-highlighted] { background: #e9efff; outline: none; }
+[data-slot="select-option"][data-state="checked"] { color: #204ac1; }
+[data-slot="select-scroll"] { justify-content: center; min-height: var(--space-6); }
+[data-slot="checkbox"] {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: var(--space-5);
+  height: var(--space-5);
+  padding: 0;
+  border: 1px solid #68758d;
+  border-radius: var(--space-1);
+  background: white;
+  color: white;
+  vertical-align: middle;
+}
+label:has(> [data-slot="checkbox"]) { min-height: var(--control-touch-size); cursor: pointer; }
+[data-slot="checkbox"][data-state="checked"] { background: #2458e6; border-color: #2458e6; }
+[data-slot="checkbox"]:disabled { opacity: .55; cursor: not-allowed; }
+summary:has(> .disclosure-icon) { display: flex; align-items: center; gap: var(--space-2); list-style: none; }
+summary:has(> .disclosure-icon)::-webkit-details-marker { display: none; }
+.disclosure-icon { flex: none; }
+summary > .disclosure-icon { margin-inline-start: auto; }
+details[open] > summary > .disclosure-icon,
+[data-slot="select-trigger"][data-state="open"] > .disclosure-icon {
+  transform: rotate(180deg);
+}
+.reference-audio summary:has(> .disclosure-icon) {
+  justify-content: center;
+  min-height: var(--control-touch-size);
+  padding: var(--space-3);
+  font-size: var(--type-label);
+}
+.reference-audio summary > .disclosure-icon { margin-inline-start: 0; }
+input[type="number"][data-slot="input"] { appearance: textfield; }
+input[type="number"][data-slot="input"]::-webkit-inner-spin-button { appearance: none; }
+input[data-slot="input"]::file-selector-button {
+  min-height: var(--control-touch-size);
+  margin-inline-end: var(--space-3);
+  padding-inline: var(--space-3);
+  border: 0;
+  border-radius: var(--space-2);
+  background: #e9efff;
+  color: #17233b;
+  font: inherit;
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="select-content"] { animation: ui-appear var(--motion-enter) ease-out; }
+  .disclosure-icon { transition: transform var(--motion-feedback) ease; }
+}
+
+/* Reserve the same viewport width while Radix locks scrolling. */
+html:has(.shell) { overflow-y: scroll; }
+html:has(.shell) body[data-scroll-locked] { margin-right: 0 !important; }
+
+[data-slot="select-trigger"] { min-inline-size: 0; max-inline-size: 100%; }
+[data-slot="select-value"] {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+[data-slot="select-content"] {
+  max-inline-size: var(--radix-select-content-available-width);
+}
+[data-slot="checkbox"] > [data-state="checked"] { display: grid; place-items: center; }
+[data-slot="checkbox"] svg { display: block; }
+
+/* Moving indicators are decorative and stay within the established controls. */
+.nav, .tabs button { position: relative; isolation: isolate; }
+.nav-indicator, .tab-indicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.nav-indicator { background: #e9efff; }
+.tab-indicator { background: white; box-shadow: 0 2px 5px #13203b10; }
+.nav.active:has(.nav-indicator), .tabs .selected:has(.tab-indicator) {
+  background: transparent;
+  box-shadow: none;
+}
+.progress > .fill, .track > .fill { width: 100%; transform-origin: left center; }
+.review-actions { min-block-size: var(--control-touch-size); }
+@media (prefers-reduced-motion: no-preference) {
+  dialog[data-motion-dialog]::backdrop { animation: ui-appear .2s cubic-bezier(.16,1,.3,1); }
+}
+.motion-area-grid { position: relative; }
+
+/* Immediate press feedback without loading gesture code on the sign-in screen. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="button"] {
+    transition: scale 120ms cubic-bezier(.16, 1, .3, 1);
+  }
+  [data-slot="button"]:active:not(:disabled) { scale: .96; }
+  [data-slot="button"]:is(.primary, .secondary, .wide, .good, .bad, .tile-open):active:not(:disabled) {
+    scale: .98;
+  }
+}

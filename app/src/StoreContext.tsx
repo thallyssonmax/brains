@@ -1,7 +1,7 @@
 import {createContext,useContext,useState,useEffect,type ReactNode} from 'react';
 import {CloudStore,transportFor} from './cloud-store';
 import {cloud} from './cloud';
-const StoreContext=createContext<CloudStore|null>(null);
+export const StoreContext=createContext<CloudStore|null>(null);
 export function AccountStore({userId,children}:{userId:string;children:ReactNode}){
  const [store]=useState(()=>new CloudStore(userId,transportFor(cloud!,userId)));
  useEffect(()=>{

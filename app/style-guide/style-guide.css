@@ -35,3 +35,5 @@
 .guide-rhythm span{display:grid;place-items:center;width:48px;height:48px;background:var(--color-surface-soft);border:1px solid var(--color-border);border-radius:10px;color:var(--color-brand);font-size:13px}
 @media(max-width:700px){.guide-main{padding-block:40px 70px}.guide-colors,.guide-grid{grid-template-columns:1fr 1fr}.guide-brand-grid{grid-template-columns:1fr 1fr}.guide-header nav{gap:12px}.guide-header nav a{font-size:12px}.guide-type h1{font-size:var(--public-hero-title-size-mobile)}}
 @media(max-width:480px){.guide-grid,.guide-colors,.guide-brand-grid{grid-template-columns:1fr}.site-header .guide-header-inner{height:auto;flex-wrap:wrap;padding-block:12px}.guide-header nav{width:100%;justify-content:space-between}.guide-main{padding-top:30px}}
+
+.guide-header nav a{display:inline-flex;align-items:center;min-height:44px;min-width:44px}

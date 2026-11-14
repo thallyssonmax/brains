@@ -1,3 +1,5 @@
+import { Button } from './components/ui/button';
+import { CardSurface } from './components/ui/card';
 import {useState} from 'react';
 import {cloud} from './cloud';
 import {useStore} from './StoreContext';
@@ -24,7 +26,7 @@ export function SyncPanel({locale,onSynced}:{locale:Locale;onSynced:()=>Promise<
   const session=await cloud.auth.getSession();if(session.data.session?.user.id!==user.id)throw Error('auth');
   step='local';await store.commitSynced(merged,plan.merged,snapshot.revision);await onSynced();setMessage(t.done);
  }catch(error){setMessage(String((error as {message?:string})?.message??error).match(/conflict/i)?t.conflict:t.error+' ('+step+')'+(step==='media'&&error instanceof Error&&/^media[A-Za-z]+(:[a-zA-Z0-9/:;=.+ -]*)?$/.test(error.message)?' — '+error.message:''))}finally{setBusy(false)}}
- return <section className="panel spaced"><h2>{t.title}</h2><p className="small">{t.help}</p><button className="primary" disabled={busy||!cloud} onClick={()=>void sync()}>{busy?t.busy:t.button}</button><p role="status">{message}</p></section>;
+ return <CardSurface className="spaced"><h2>{t.title}</h2><p className="small">{t.help}</p><Button className="primary" disabled={busy||!cloud} onClick={()=>void sync()}>{busy?t.busy:t.button}</Button><p role="status">{message}</p></CardSurface>;
 }
 
 
