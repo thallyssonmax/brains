@@ -10,7 +10,7 @@ import {errorText,type T} from './i18n';
 import {SideEditor,SideView} from './Media';
 import {Dialog} from './Dialog';
 import {cloud} from './cloud';
-import {learnedVocabulary} from '../api/learned-vocabulary.js';
+import {learnedVocabulary} from '../shared/learned-vocabulary.js';
 import {optimizeImage} from './image-compression';
 export function Editor({initial,library,t,onSaved,onExit}:{initial:Draft;library:Library;t:T;onSaved:(data:Library)=>void;onExit:()=>void}){
  const store=useStore();

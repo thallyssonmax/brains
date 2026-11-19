@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {learnedVocabulary} from '../api/learned-vocabulary.js';
+import {learnedVocabulary} from '../shared/learned-vocabulary.js';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
 import {createImportServer} from '../api/brains-mcp-import.js';
