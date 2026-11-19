@@ -41,10 +41,11 @@ describe('authenticated Brains card tools',()=>{
 
  it('exposes a read-only duplicate check and an explicitly approved text-card writer',async()=>withClient(fixture().store,async client=>{
   const {tools}=await client.listTools();
-  expect(tools.map(tool=>tool.name)).toEqual(['get_connected_account','list_areas','check_duplicate_fronts','create_flashcards']);
+  expect(tools.map(tool=>tool.name)).toEqual(['get_connected_account','list_areas','get_learned_vocabulary','check_duplicate_fronts','create_flashcards']);
   expect(tools[2].annotations.readOnlyHint).toBe(true);
-  expect(tools[3].inputSchema.properties).not.toHaveProperty('file');
-  expect(tools[3].annotations).toMatchObject({readOnlyHint:false,destructiveHint:false});
+  expect(tools[3].annotations.readOnlyHint).toBe(true);
+  expect(tools[4].inputSchema.properties).not.toHaveProperty('file');
+  expect(tools[4].annotations).toMatchObject({readOnlyHint:false,destructiveHint:false});
  }));
 
  it('identifies the authenticated account without exposing library data',async()=>{

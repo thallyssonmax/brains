@@ -2,6 +2,7 @@ import {createClient} from '@supabase/supabase-js';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {StreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {z} from 'zod';
+import {learnedVocabulary} from './learned-vocabulary.js';
 
 const APP_ORIGIN='https://www.heybrains.app';
 const MAX_BODY=64*1024;
@@ -52,7 +53,7 @@ function errorResult(error){
 }
 
 export function createImportServer(store,account={id:'',email:null}){
- const server=new McpServer({name:'brains-flashcard-import',title:'Brains — Criar flashcard',version:'0.3.4',websiteUrl:APP_ORIGIN,description:'Crie cards de texto no Brains depois de aprovar o conteúdo nesta conversa.',icons:[{src:`${APP_ORIGIN}/brains-plugin-logo-v1.svg`,mimeType:'image/svg+xml',sizes:['256x256']}]},{instructions:"This MCP is connected to a Brains account selected by ChatGPT through OAuth. Whenever the user asks which Brains account is connected, who is signed in, or asks for the account email or ID, ALWAYS call get_connected_account before answering. State the returned email; if no email is available, state the stable account ID. Never say that this integration cannot provide account identity, and never offer listing areas as a substitute. When the user names a target Brains account or says they have multiple connected accounts, also call get_connected_account first and confirm whether this OAuth connection matches the requested account before listing areas or creating cards. If the requested account is not connected, do not use the current account as a substitute; guide the user to ChatGPT Settings > Plugins or Apps > Brains > Connected accounts > Connect another account, when available. After connection, call get_connected_account again and confirm the account. Never claim to switch accounts yourself or access another account through the current connection. If no account is specified, use the OAuth connection selected by ChatGPT. If the user asks which account it is, call get_connected_account and state the result. Call list_areas when the target area is unclear. Call check_duplicate_fronts on the requested fronts in the selected area before presenting any cards for approval. Report existing fronts and repeated entries, then draft and show only the new cards with their exact front, back and target area, and wait for the user to explicitly approve before create_flashcards. Never infer approval from a request to prepare a proposal. Only active, non-archived cards count as duplicates; deleted or archived cards may be recreated. Never save a duplicate front even with a different back. Save only the exact approved text. This integration does not transfer images or audio files. Reference voice playback is provided by Brains; recordings are made in the Brains app."});
+ const server=new McpServer({name:'brains-flashcard-import',title:'Brains — Criar flashcard',version:'0.3.5',websiteUrl:APP_ORIGIN,description:'Crie cards de texto no Brains depois de aprovar o conteúdo nesta conversa.',icons:[{src:`${APP_ORIGIN}/brains-plugin-logo-v1.svg`,mimeType:'image/svg+xml',sizes:['256x256']}]},{instructions:"This MCP is connected to a Brains account selected by ChatGPT through OAuth. Whenever the user asks which Brains account is connected, who is signed in, or asks for the account email or ID, ALWAYS call get_connected_account before answering. State the returned email; if no email is available, state the stable account ID. Never say that this integration cannot provide account identity, and never offer listing areas as a substitute. When the user names a target Brains account or says they have multiple connected accounts, also call get_connected_account first and confirm whether this OAuth connection matches the requested account before listing areas or creating cards. If the requested account is not connected, do not use the current account as a substitute; guide the user to ChatGPT Settings > Plugins or Apps > Brains > Connected accounts > Connect another account, when available. After connection, call get_connected_account again and confirm the account. Never claim to switch accounts yourself or access another account through the current connection. If no account is specified, use the OAuth connection selected by ChatGPT. If the user asks which account it is, call get_connected_account and state the result. Call list_areas when the target area is unclear. For language-learning examples, call get_learned_vocabulary for the selected area and reuse one or two returned terms only when they fit naturally. Call check_duplicate_fronts on the requested fronts in the selected area before presenting any cards for approval. Report existing fronts and repeated entries, then draft and show only the new cards with their exact front, back and target area, and wait for the user to explicitly approve before create_flashcards. Never infer approval from a request to prepare a proposal. Only active, non-archived cards count as duplicates; deleted or archived cards may be recreated. Never save a duplicate front even with a different back. Save only the exact approved text. This integration does not transfer images or audio files. Reference voice playback is provided by Brains; recordings are made in the Brains app."});
 
  server.registerTool('get_connected_account',{
   title:'Identificar conta Brains conectada',
@@ -82,6 +83,24 @@ export function createImportServer(store,account={id:'',email:null}){
     return [{id:area.id,name:area.name,language:decks[0].language,cardCount:activeCardsForArea(library,area.id).length}];
    });
    return {structuredContent:{areas},content:[{type:'text',text:areas.length?JSON.stringify(areas):'Nenhuma área ativa foi encontrada. Crie uma área no Brains antes de importar cards.'}]};
+  }catch(error){return errorResult(error)}
+ });
+
+ server.registerTool('get_learned_vocabulary',{
+  title:'Consultar vocabulário consolidado',
+  description:'Retorna até 20 termos de cards ativos da área com intervalo de pelo menos 30 dias e três revisões recentes bem-sucedidas. Use um ou dois somente quando couberem naturalmente na frase de exemplo. Não retorna o histórico de revisões.',
+  inputSchema:{areaId:areaIdSchema,limit:z.number().int().min(1).max(20).optional()},
+  outputSchema:{terms:z.array(z.object({term:z.string(),language:z.string()}))},
+  annotations:{readOnlyHint:true,destructiveHint:false,openWorldHint:false}
+ },async({areaId,limit=20})=>{
+  try{
+   const row=await store.read();
+   if(!row)throw Error('MISSING_LIBRARY');
+   const library=row.document;
+   if(!Array.isArray(library?.areas)||!Array.isArray(library?.decks)||!Array.isArray(library?.cards))throw Error('INVALID_LIBRARY');
+   if(!library.areas.some(area=>area.id===areaId&&!area.deleted&&!area.archived))throw Error('MISSING_AREA');
+   const terms=learnedVocabulary(library,{areaId,limit}).map(({term,language})=>({term,language}));
+   return {structuredContent:{terms},content:[{type:'text',text:JSON.stringify({terms})}]};
   }catch(error){return errorResult(error)}
  });
 

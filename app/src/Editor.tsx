@@ -10,6 +10,7 @@ import {errorText,type T} from './i18n';
 import {SideEditor,SideView} from './Media';
 import {Dialog} from './Dialog';
 import {cloud} from './cloud';
+import {learnedVocabulary} from '../api/learned-vocabulary.js';
 import {optimizeImage} from './image-compression';
 export function Editor({initial,library,t,onSaved,onExit}:{initial:Draft;library:Library;t:T;onSaved:(data:Library)=>void;onExit:()=>void}){
  const store=useStore();
@@ -20,7 +21,7 @@ export function Editor({initial,library,t,onSaved,onExit}:{initial:Draft;library
   setAiBusy(kind);setError('');
   try{
    const session=await cloud.auth.getSession();const token=session.data.session?.access_token;if(!token)throw Error('authenticationRequired');
-   const vocabulary=Array.from(new Set(library.cards.filter(c=>c.id!==card.id&&c.deckId===card.deckId&&!c.deleted&&!c.archived).sort((a,b)=>(b.memory?.reps??0)-(a.memory?.reps??0)).map(c=>c.front.text.trim()).filter(v=>v&&v.length<=80))).slice(0,40);
+   const vocabulary=learnedVocabulary(library,{deckId:card.deckId,excludeCardId:card.id}).map(item=>item.term);
    const response=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({cardId:card.id,kind,front:card.front.text,back:card.back.text,language:card.front.language,vocabulary})});
    const result=await response.json();if(!response.ok)throw Error(result.error==='limit'?'aiLimit':result.error==='providerLimit'?'aiProviderLimit':result.error==='unavailable'?'aiUnavailable':result.error==='authentication'?'authenticationRequired':'aiFailed');
    if(kind==='sentence'){if(typeof result.sentence!=='string')throw Error('aiFailed');update({...latest.current,back:{...latest.current.back,text:result.sentence}})}
