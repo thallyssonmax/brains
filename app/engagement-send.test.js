@@ -28,6 +28,7 @@ describe('sendEngagementMessage retry handling',()=>{
   const init=fetchMock.mock.calls[0][1];
   expect(init.headers['Idempotency-Key']).toBe('brains-message-123');
   expect(JSON.parse(init.body).to).toEqual([message.email]);
+  expect(JSON.parse(init.body).tags).toEqual([{name:'brains_flow',value:'learning'}]);
   expect(db.rpc).toHaveBeenCalledWith('brains_engagement_mark',{p_message_id:message.id,p_status:'sent',p_provider_id:'resend-123'});
  });
 

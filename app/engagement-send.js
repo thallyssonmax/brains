@@ -8,7 +8,7 @@ export async function sendEngagementMessage(db,message){
  const unsubscribeUrl='https://www.heybrains.app/api/email-unsubscribe?token='+encodeURIComponent(token);
  const content=emailContent(message,unsubscribeUrl);
  try{
-  const provider=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+process.env.RESEND_API_KEY,'Content-Type':'application/json','Idempotency-Key':'brains-'+message.id},body:JSON.stringify({from:'Brains <no-reply@heybrains.app>',to:[message.email],subject:content.subject,html:content.html,text:content.text,headers:{'List-Unsubscribe':'<'+unsubscribeUrl+'>'}}),signal:AbortSignal.timeout(15000)});
+  const provider=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+process.env.RESEND_API_KEY,'Content-Type':'application/json','Idempotency-Key':'brains-'+message.id},body:JSON.stringify({from:'Brains <no-reply@heybrains.app>',to:[message.email],subject:content.subject,html:content.html,text:content.text,tags:[{name:'brains_flow',value:'learning'}],headers:{'List-Unsubscribe':'<'+unsubscribeUrl+'>'}}),signal:AbortSignal.timeout(15000)});
   const payload=await provider.json().catch(()=>({}));
   if(!provider.ok||!payload.id){
    // Retry rate limits, transient provider errors and malformed success responses.
