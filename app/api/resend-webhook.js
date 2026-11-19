@@ -1,5 +1,5 @@
 import {serviceClient} from './engagement-cron.js';
-import {verifySvix} from './engagement-security.js';
+import {verifySvix} from '../engagement-security.js';
 
 function isLearningEmail(data) {
  const tags = data.tags;

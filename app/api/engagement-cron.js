@@ -1,5 +1,5 @@
 import {createClient} from '@supabase/supabase-js';
-import {equalSecret} from './engagement-security.js';
+import {equalSecret} from '../engagement-security.js';
 import {sendEngagementMessage} from '../engagement-send.js';
 
 const response=(status,body)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});

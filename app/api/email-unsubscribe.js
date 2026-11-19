@@ -1,5 +1,5 @@
 import {serviceClient} from './engagement-cron.js';
-import {verifyUnsubscribe} from './engagement-security.js';
+import {verifyUnsubscribe} from '../engagement-security.js';
 
 const html=(status,content)=>new Response(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Brains · E-mails</title><body style="font:16px Arial,sans-serif;max-width:440px;margin:12vh auto;padding:24px;color:#17233b"><div style="font-size:26px;font-weight:800;color:#2458e6">Brains</div>${content}</body></html>`,{status,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
 export async function GET(request){const url=new URL(request.url);const token=url.searchParams.get('token');if(!verifyUnsubscribe(token,process.env.EMAIL_UNSUBSCRIBE_SECRET))return html(400,'<h1>Link inválido ou expirado</h1><p>Entre no Brains para alterar sua preferência em Configurações.</p>');return html(200,`<h1>Parar e-mails de aprendizado?</h1><p>Você continuará recebendo mensagens essenciais da conta.</p><form method="post"><input type="hidden" name="token" value="${token}"><button style="padding:13px 18px;background:#2458e6;color:white;border:0;border-radius:8px;cursor:pointer">Descadastrar</button></form>`)}

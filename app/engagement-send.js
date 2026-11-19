@@ -1,5 +1,5 @@
-import {emailContent} from './api/engagement-content.js';
-import {unsubscribeToken} from './api/engagement-security.js';
+import {emailContent} from './engagement-content.js';
+import {unsubscribeToken} from './engagement-security.js';
 
 export async function sendEngagementMessage(db,message){
  if(!process.env.RESEND_API_KEY||!process.env.EMAIL_UNSUBSCRIBE_SECRET)return {status:'configuration'};

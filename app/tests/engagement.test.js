@@ -1,8 +1,8 @@
 import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
-import {emailContent} from '../api/engagement-content.js';
-import {unsubscribeToken,verifyUnsubscribe,verifySvix} from '../api/engagement-security.js';
+import {emailContent} from '../engagement-content.js';
+import {unsubscribeToken,verifyUnsubscribe,verifySvix} from '../engagement-security.js';
 import {GET as runCron,handleWelcome,validRecipient} from '../api/engagement-cron.js';
 
 
