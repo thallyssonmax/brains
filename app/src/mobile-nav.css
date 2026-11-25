@@ -1,23 +1,30 @@
 @media (max-width: 760px) {
-  .bottom {
-    position: fixed;
-    inset-inline: 0;
-    bottom: 0;
-    width: 100%;
+  .shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+
+  .shell > .main {
+    flex: 1 0 auto;
+    padding-block-start: calc(var(--container-top) + env(safe-area-inset-top, 0px));
+    padding-block-end: var(--space-6);
+  }
+
+  .shell > .bottom {
+    position: sticky;
+    inset-block-end: 0;
     box-sizing: border-box;
-    padding: 10px max(12px, env(safe-area-inset-left, 0px))
-      calc(10px + env(safe-area-inset-bottom, 0px))
-      max(12px, env(safe-area-inset-right, 0px));
+    padding: var(--space-2)
+      max(var(--space-3), env(safe-area-inset-right, 0px))
+      calc(var(--space-2) + env(safe-area-inset-bottom, 0px))
+      max(var(--space-3), env(safe-area-inset-left, 0px));
     z-index: 50;
   }
 
-  .main {
-    padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
-  }
-}
-
-@media (max-width: 380px) {
-  .main {
-    padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+  .bottom .nav {
+    min-block-size: var(--control-touch-size);
+    padding-block: var(--space-1);
+    gap: var(--space-1);
   }
 }
