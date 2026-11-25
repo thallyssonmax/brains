@@ -86,5 +86,13 @@ nav a.nav { text-decoration: none; }
   html{scroll-padding-bottom:calc(80px + env(safe-area-inset-bottom))}
 }
 
-#app-settings-form .email-consent{display:flex;align-items:center;gap:var(--space-3);min-height:var(--control-touch-size);font-weight:var(--weight-medium)}
+#app-settings-form .panel > .small:has(+ .email-consent) { margin-block-end: 0; }
+#app-settings-form .email-consent {
+  display: flex;
+  align-items: end;
+  gap: var(--space-3);
+  min-height: var(--control-touch-size);
+  margin-block-start: 0;
+  font-weight: var(--weight-medium);
+}
 #app-settings-form .email-consent input[type=checkbox]{flex:none;width:20px;height:20px;margin:0;padding:0;accent-color:#2458e6}

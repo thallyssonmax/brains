@@ -153,16 +153,16 @@ html:has(.shell) body[data-scroll-locked] { margin-right: 0 !important; }
 
 /* Moving indicators are decorative and stay within the established controls. */
 .nav, .tabs button { position: relative; isolation: isolate; }
-.nav-indicator, .tab-indicator {
+.tab-indicator {
   position: absolute;
   inset: 0;
   z-index: -1;
   border-radius: inherit;
   pointer-events: none;
 }
-.nav-indicator { background: #e9efff; }
+
 .tab-indicator { background: white; box-shadow: 0 2px 5px #13203b10; }
-.nav.active:has(.nav-indicator), .tabs .selected:has(.tab-indicator) {
+.tabs .selected:has(.tab-indicator) {
   background: transparent;
   box-shadow: none;
 }
@@ -182,4 +182,23 @@ html:has(.shell) body[data-scroll-locked] { margin-right: 0 !important; }
   [data-slot="button"]:is(.primary, .secondary, .wide, .good, .bad, .tile-open):active:not(:disabled) {
     scale: .98;
   }
+}
+
+/* Animate only the selection surface, without moving or duplicating labels. */
+.shell .nav.active { background: transparent; }
+.shell .nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: #e9efff;
+  opacity: 0;
+  pointer-events: none;
+}
+.shell .nav.active::before { opacity: 1; }
+.shell .bottom .nav-label { font-size: inherit; }
+@media (prefers-reduced-motion: no-preference) {
+  .shell .nav::before { transition: opacity var(--motion-feedback) ease-out; }
+  .shell .nav[href]:active::before { opacity: 1; }
 }
